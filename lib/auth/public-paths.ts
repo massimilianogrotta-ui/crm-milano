@@ -77,6 +77,12 @@ export const PUBLIC_PATHS: RegExp[] = [
   // dois nomes de propósito: `/^\/legal/` deixaria qualquer sub-path futuro
   // nascer público de carona.
   /^\/legal\/(terms|privacy)$/,
+  // Questionário público de onboarding All-io (widget intake, arquivo estático
+  // em `public/`). Quem responde é o PROSPECT — não tem, nem deve ter, sessão.
+  // A escrita real passa pelo webhook `/api/v1/webhooks/in/<token>` (que já é
+  // público acima); esta entrada só deixa O FORMULÁRIO carregar. Ancorado com
+  // `$`: nenhum sub-path nasce público de carona.
+  /^\/onboarding-allio\.html$/,
 ];
 
 export function isPublicPath(pathname: string): boolean {
