@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>All-io — Configura tu CRM a medida</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  :root{ --bg:#f6f5f2; --card:#fff; --ink:#1a1a1a; --mut:#6b6b6b;
+    --acc:#0f766e; --acc2:#115e59; --line:#e8e6e1; --chip:#eff6f6; --chipsel:#0f766e; --chipink:#fff; }
+  html,body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--ink)}
+  .wrap{max-width:760px;margin:0 auto;padding:28px 20px 64px}
+  .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:22px}
+  .brand{font-weight:800;font-size:20px;letter-spacing:.3px}
+  .brand span{color:var(--acc)}
+  .lang{display:flex;gap:6px}
+  .lang button{border:1px solid var(--line);background:#fff;color:var(--ink);border-radius:22px;padding:5px 13px;font-size:13px;cursor:pointer;font-weight:600}
+  .lang button.on{background:var(--acc);border-color:var(--acc);color:#fff}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:30px 28px;margin-bottom:16px}
+  .kicker{font-size:13px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--mut);margin-bottom:8px}
+  h1{font-size:26px;line-height:1.25;font-weight:800}
+  h2{font-size:20px;line-height:1.3;font-weight:800;margin-bottom:6px}
+  p{margin-top:10px;line-height:1.55;color:#333}
+  .mut{color:var(--mut);font-size:14px}
+  .opt{display:flex;align-items:center;gap:10px;border:1.5px solid var(--line);background:#fff;border-radius:12px;padding:13px 15px;cursor:pointer;margin-top:10px;transition:.15s;font-size:15px}
+  .opt:hover{border-color:var(--acc)}
+  .opt.sel{border-color:var(--acc);background:var(--chip);box-shadow:0 0 0 1px var(--acc) inset}
+  .opt .ico{font-size:19px}
+  .opt .d{display:block;font-size:12.5px;color:var(--mut);margin-top:2px;line-height:1.4}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+  .chip{border:1.5px solid var(--line);background:#fff;border-radius:20px;padding:8px 14px;font-size:14px;cursor:pointer;transition:.15s}
+  .chip.sel{background:var(--chipsel);border-color:var(--chipsel);color:var(--chipink)}
+  .field{width:100%;border:1.5px solid var(--line);border-radius:12px;padding:13px 15px;font-size:15px;margin-top:10px;background:#fff;outline:none}
+  .field:focus{border-color:var(--acc)}
+  .qlabel{font-size:14px;font-weight:700;margin-top:18px;color:var(--mut)}
+  .branch{border-left:3px solid var(--acc);padding:4px 0 4px 16px;margin:6px 0 10px}
+  .nav{display:flex;justify-content:space-between;align-items:center;margin-top:24px}
+  .btn{border:none;border-radius:12px;padding:13px 24px;font-size:15px;font-weight:700;cursor:pointer}
+  .btn-back{background:transparent;color:var(--mut)}
+  .btn-next{background:var(--acc);color:#fff}
+  .btn:disabled{opacity:.4;cursor:not-allowed}
+  .step{display:none}.step.on{display:block}
+  #resumen{white-space:pre-line;font-size:14px;line-height:1.7;background:var(--chip);border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin-top:14px}
+  .prog{height:4px;background:var(--line);border-radius:4px;margin-bottom:24px;overflow:hidden}
+  .prog i{display:block;height:100%;background:var(--acc);border-radius:4px;transition:width .3s}
+  .pill{display:inline-block;background:var(--chip);color:var(--acc2);border:1px solid var(--line);border-radius:20px;padding:4px 12px;font-size:12.5px;font-weight:600;margin:4px 4px 0 0}
+  footer{color:var(--mut);font-size:12.5px;text-align:center;margin-top:26px;line-height:1.5}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div class="brand"><span>All-io</span> · CRM a medida</div>
+    <div class="lang" id="lang">
+      <button data-l="es" class="on">ES</button>
+      <button data-l="en">EN</button>
+      <button data-l="it">IT</button>
+    </div>
+  </div>
+  <div class="prog"><i id="bar" style="width:10%"></i></div>
+
+  <!-- 0 INTRO — landing All-io -->
+  <div class="step on card" id="s0">
+    <div class="kicker" data-i="s0.kick">Sobre el servicio</div>
+    <h1 data-i="s0.t">Tu CRM listo para trabajar, ajustado a tu negocio</h1>
+    <p data-i="s0.1">Somos <b>All-io</b>, desarrollo de software. Te montamos un sistema de gestión de clientes (CRM) que responde por WhatsApp, organiza tu cartera y te deja los números que importan. Nada de plantillas: cada configuración se arma con las respuestas que nos das aquí.</p>
+    <p data-i="s0.2" class="mut">Este cuestionario guía el montaje. Tómate unos minutos: por cada área te mostramos lo que el sistema sabe hacer y tú eliges lo que necesitas.</p>
+    <div class="nav"><span></span><button class="btn btn-next" onclick="go(1)" data-i="btn.start">Empezar →</button></div>
+  </div>
+
+  <!-- 1 NEGOCIO -->
+  <div class="step card" id="s1">
+    <div class="kicker" data-i="s1.kick">Tu negocio</div>
+    <h2 data-i="s1.t">Cuéntanos a qué se dedica tu actividad</h2>
+    <div class="qlabel" data-i="s1.nombre">¿Cómo se llama tu negocio?</div>
+    <input class="field" id="c-nombre" data-ph="s1.phnombre" placeholder="Ej. Radio Banana">
+    <div class="qlabel" data-i="s1.web">¿Tienes página web? (opcional)</div>
+    <input class="field" id="c-web" data-ph="s1.phweb" placeholder="Ej. www.tunegocio.com">
+    <div class="qlabel" data-i="s1.ig">¿Tienes Instagram u otra red? (opcional)</div>
+    <input class="field" id="c-ig" data-ph="s1.phig" placeholder="Ej. @tunegocio">
+    <div class="qlabel" data-i="s1.sector">Sector principal</div>
+    <div class="opts">
+      <div class="opt" data-sel="clinica" data-i="s1.o1" onclick="pick(this)">🦷 <span>Sector salud / estética (clínica dental, estética)</span></div>
+      <div class="opt" data-sel="gastro" data-i="s1.o2" onclick="pick(this)">🍽️ <span>Gastronomía / restauración</span></div>
+      <div class="opt" data-sel="retail" data-i="s1.o3" onclick="pick(this)">🛍️ <span>Comercio / tienda / retail</span></div>
+      <div class="opt" data-sel="svc" data-i="s1.o4" onclick="pick(this)">🧑‍💼 <span>Servicios profesionales / consultores</span></div>
+      <div class="opt" data-sel="prod" data-i="s1.o5" onclick="pick(this)">🌱 <span>Productor / distribuidor (alimentos, agro, otros)</span></div>
+      <div class="opt" data-sel="otro" data-i="s1.o6" onclick="pick(this)">📦 <span>Otro sector (escríbelo aquí abajo)</span></div>
+    </div>
+    <div class="branch" id="b-otro" style="display:none">
+      <input class="field" id="c-otro" data-ph="s1.photro" placeholder="¿Cuál es tu sector?">
+    </div>
+    <div class="qlabel" data-i="s1.productos">¿Qué vendes a tus clientes?</div>
+    <div class="branch">
+      <div class="chips" id="chips-products">
+        <span class="chip" data-i-chip="s1.p1" onclick="chip(this)">Servicios / citas</span>
+        <span class="chip" data-i-chip="s1.p2" onclick="chip(this)">Productos físicos o catálogo</span>
+        <span class="chip" data-i-chip="s1.p3" onclick="chip(this)">Suscripciones / contratos</span>
+        <span class="chip" data-i-chip="s1.p4" onclick="chip(this)">Precios variables / bajo pedido</span>
+      </div>
+    </div>
+    <div class="qlabel" data-i="s1.people">¿Cuántas personas atienden hoy a tus clientes?</div>
+    <div class="opts">
+      <div class="opt" data-sel="solo" data-i="s1.pe1" onclick="pick(this)">👤 <span>Solo yo</span></div>
+      <div class="opt" data-sel="pocos" data-i="s1.pe2" onclick="pick(this)">👥 <span>2 a 5 personas</span></div>
+      <div class="opt" data-sel="equipo" data-i="s1.pe3" onclick="pick(this)">🏢 <span>Un equipo / varias sucursales</span></div>
+    </div>
+    <div class="nav">
+      <button class="btn btn-back" onclick="go(0)" data-i="btn.back">←</button>
+      <button class="btn btn-next" onclick="go(2)" data-i="btn.next">Siguiente →</button>
+    </div>
+  </div>
+
+  <!-- 2 CANALES -->
+  <div class="step card" id="s2">
+    <div class="kicker" data-i="s2.kick">Canales de contacto</div>
+    <h2 data-i="s2.t">¿Por dónde te escriben y donde quieres atender? (elige varios)</h2>
+    <div class="opts">
+      <div class="opt sel" data-sel="whatsapp" data-i="s2.whatsapp" onclick="chip(this)">💬 <span>WhatsApp (el principal para gestionar clientes)</span></div>
+      <div class="opt" data-sel="instagram" data-i="s2.instagram" onclick="chip(this)">📸 <span>Instagram / redes</span></div>
+      <div class="opt" data-sel="email" data-i="s2.email" onclick="chip(this)">📧 <span>Email</span></div>
+    </div>
+    <div class="branch" id="bwhats" style="display:block">
+      <div class="qlabel" data-i="s2.what" data-selected="">¿Qué te preguntan más seguido por WhatsApp?</div>
+      <div class="chips" id="chips-what">
+        <span class="chip" data-i-chip="s2.w1" onclick="chip(this)">Precio / costos</span>
+        <span class="chip" data-i-chip="s2.w2" onclick="chip(this)">Horarios / disponibilidad</span>
+        <span class="chip" data-i-chip="s2.w3" onclick="chip(this)">Cotizaciones / envíos</span>
+        <span class="chip" data-i-chip="s2.w4" onclick="chip(this)">Seguimiento de pedido / estado</span>
+        <span class="chip" data-i-chip="s2.w5" onclick="chip(this)">Resultados / reportes</span>
+      </div>
+    </div>
+    <div class="qlabel" data-i="s2.nums">¿Cuántos números / cuentas de atención tienes?</div>
+    <div class="opts">
+      <div class="opt" data-sel="uno" data-i="s2.n1" onclick="pick(this)">1️⃣ <span>Un número</span></div>
+      <div class="opt" data-sel="varios" data-i="s2.n2" onclick="pick(this)">🔀 <span>Varios (por sucursal, producto o equipo)</span></div>
+    </div>
+    <div class="nav">
+      <button class="btn btn-back" onclick="go(1)" data-i="btn.back">←</button>
+      <button class="btn btn-next" onclick="go(3)" data-i="btn.next">Siguiente →</button>
+    </div>
+  </div>
+
+  <!-- 3 FLUJO COMERCIAL -->
+  <div class="step card" id="s3">
+    <div class="kicker" data-i="s3.kick">Tu proceso de venta</div>
+    <h2 data-i="s3.t">¿Cómo avanza un interesado hasta que compra?</h2>
+    <div class="qlabel" data-i="s3.etapas">Escribe tus etapas (p. ej. Interesado → Cotización → Prueba → Cliente) o déjalo en blanco para usarlas por defecto</div>
+    <input class="field" id="c3" data-ph="s3.ph" placeholder="Interesado → Cotización → Cliente">
+    <div class="qlabel" data-i="s3.ritmo">¿En cuánto suele decidir alguien?</div>
+    <div class="opts">
+      <div class="opt" data-sel="mismo" data-i="s3.r1" onclick="pick(this)">⚡ <span>El mismo día</span></div>
+      <div class="opt" data-sel="corto" data-i="s3.r2" onclick="pick(this)">📅 <span>Entre 1 y 3 días</span></div>
+      <div class="opt" data-sel="largo" data-i="s3.r3" onclick="pick(this)">⏳ <span>Más de una semana</span></div>
+    </div>
+    <div class="qlabel" data-i="s3.prop">¿Envías propuestas o cotizaciones formalizadas?</div>
+    <div class="opts">
+      <div class="opt" data-sel="manual" data-i="s3.pr1" onclick="pick(this)">📄 <span>A mano cada vez</span></div>
+      <div class="opt" data-sel="plantilla" data-i="s3.pr2" onclick="pick(this)">🗂️ <span>Con plantilla / formato fijo</span></div>
+      <div class="opt" data-sel="no" data-i="s3.pr3" onclick="pick(this)">🚫 <span>No, basta con un precio por chat</span></div>
+    </div>
+    <div class="qlabel" data-i="s3.fup">¿Sigues luego a quien no te compró?</div>
+    <div class="opts">
+      <div class="opt" data-sel="si" data-i="s3.f1" onclick="pick(this)">✅ <span>Sí, llamo / escribo de nuevo</span></div>
+      <div class="opt" data-sel="seleccion" data-i="s3.f2" onclick="pick(this)">🎯 <span>Solo a los que parecen más cerca</span></div>
+      <div class="opt" data-sel="no" data-i="s3.f3" onclick="pick(this)">😵 <span>Se me olvida</span></div>
+    </div>
+    <div class="nav">
+      <button class="btn btn-back" onclick="go(2)" data-i="btn.back">←</button>
+      <button class="btn btn-next" onclick="go(4)" data-i="btn.next">Siguiente →</button>
+    </div>
+  </div>
+
+  <!-- 4 AGENTE IA -->
+  <div class="step card" id="s4">
+    <div class="kicker" data-i="s4.kick">Asistente automático de IA</div>
+    <h2 data-i="s4.t">¿Quieres que un asistente responda y gestione por ti?</h2>
+    <div class="qlabel" data-i="s4.q">Lo que el asistente puede hacer: responder preguntas, registrar contactos, organizar citas, avisarte lo importante.</div>
+    <div class="opts">
+      <div class="opt sel" data-sel="si" data-i="s4.o1" onclick="pick(this)">🤖 <span>Sí, quiero que atienda</span></div>
+      <div class="opt" data-sel="parcial" data-i="s4.o2" onclick="pick(this)">🧑‍💻 <span>Solo responder precios / datos, lo demás humano</span></div>
+      <div class="opt" data-sel="no" data-i="s4.o3" onclick="pick(this)">🙅 <span>No por ahora, solo quiero organizar</span></div>
+    </div>
+    <div class="branch" id="bagente" style="display:none">
+      <div class="qlabel" data-i="s4.no" >¿Qué NO debería hacer solo sin avisarte?</div>
+      <div class="chips" id="chips-nohacer">
+        <span class="chip" data-i-chip="s4.no1" onclick="chip(this)">Inventar precios</span>
+        <span class="chip" data-i-chip="s4.no2" onclick="chip(this)">Prometer descuentos</span>
+        <span class="chip" data-i-chip="s4.no3" onclick="chip(this)">Cobrar</span>
+        <span class="chip" data-i-chip="s4.no4" onclick="chip(this)">Comprometer fechas</span>
+      </div>
+      <div class="qlabel" data-i="s4.auto">¿Qué puede hacer de forma autónoma?</div>
+      <div class="chips" id="chips-auto">
+        <span class="chip" data-i-chip="s4.a1" onclick="chip(this)">Avisar cuando haya novedades</span>
+        <span class="chip" data-i-chip="s4.a2" onclick="chip(this)">Agendar citas / recordar</span>
+        <span class="chip" data-i-chip="s4.a3" onclick="chip(this)">Redactar y enviar seguimientos</span>
+        <span class="chip" data-i-chip="s4.a4" onclick="chip(this)">Proponer mejoras / ideas</span>
+      </div>
+      <div class="qlabel" data-i="s4.learn">¿Quieres que aprenda de tus respuestas y de tu catálogo?</div>
+      <div class="chips" id="chips-learn">
+        <span class="chip" data-i-chip="s4.l1" onclick="chip(this)">De mi catálogo / precios</span>
+        <span class="chip" data-i-chip="s4.l2" onclick="chip(this)">De mis conversaciones pasadas</span>
+        <span class="chip" data-i-chip="s4.l3" onclick="chip(this)">De documentos / manuales</span>
+      </div>
+      <div class="qlabel" data-i="s4.idioma">¿En qué idioma habla con tus clientes?</div>
+      <div class="chips" id="chips-idioma" style="margin-bottom:8px">
+        <span class="chip sel" data-sel-id="es_ec" onclick="chip(this)">Español (Ecuador)</span>
+        <span class="chip" data-sel-id="es" onclick="chip(this)">Español</span>
+        <span class="chip" data-sel-id="en" onclick="chip(this)">English</span>
+        <span class="chip" data-sel-id="it" onclick="chip(this)">Italiano</span>
+      </div>
+    </div>
+    <div class="nav">
+      <button class="btn btn-back" onclick="go(3)" data-i="btn.back">←</button>
+      <button class="btn btn-next" onclick="go(5)" data-i="btn.next">Siguiente →</button>
+    </div>
+  </div>
+
+  <!-- 5 MARKETING -->
+  <div class="step card" id="s5">
+    <div class="kicker" data-i="s5.kick">Captación y marketing</div>
+    <h2 data-i="s5.t">¿Cómo consigues clientes nuevos y campañas?</h2>
+    <div class="qlabel" data-i="s5.ads">¿Haces publicidad pagada (Instagram / Facebook / Google)?</div>
+    <div class="opts">
+      <div class="opt" data-sel="si" data-i="s5.a1" onclick="pick(this)">📊 <span>Sí, quiero ver qué rinde por campaña</span></div>
+      <div class="opt" data-sel="no" data-i="s5.a2" onclick="pick(this)">🙂 <span>No por ahora, llego por recomendaciones</span></div>
+    </div>
+    <div class="branch" id="bads" style="display:none">
+      <div class="qlabel" data-i="s5.conv">¿Quieres saber qué cliente vino de cada campaña?</div>
+      <div class="opts">
+        <div class="opt" data-sel="si" data-i="s5.c1" onclick="pick(this)">🎯 <span>Sí, atribuir ventas a campañas</span></div>
+        <div class="opt" data-sel="no" data-i="s5.c2" onclick="pick(this)">📈 <span>Solo métricas generales</span></div>
+      </div>
+    </div>
+    <div class="qlabel" data-i="s5.listas">¿Envías promociones a tus clientes (o querrías)?</div>
+    <div class="opts">
+      <div class="opt" data-sel="si" data-i="s5.l1" onclick="pick(this)">📣 <span>Sí / me gustaría</span></div>
+      <div class="opt" data-sel="no" data-i="s5.l2" onclick="pick(this)">🙅 <span>No</span></div>
+    </div>
+    <div class="qlabel" data-i="s5.radar">¿Te preocupa que clientes se enfríen y se vayan?</div>
+    <div class="opts">
+      <div class="opt" data-sel="si" data-i="s5.r1" onclick="pick(this)">🛟 <span>Sí, quiero alertas de quien se apaga</span></div>
+      <div class="opt" data-sel="no" data-i="s5.r2" onclick="pick(this)">🤷 <span>No, tenemos flujo constante</span></div>
+    </div>
+    <div class="nav">
+      <button class="btn btn-back" onclick="go(4)" data-i="btn.back">←</button>
+      <button class="btn btn-next" onclick="go(6)" data-i="btn.next">Siguiente →</button>
+    </div>
+  </div>
+
+  <!-- 6 RESUMEN -->
+  <div class="step card" id="s6">
+    <div class="kicker" data-i="s6.kick">Revisar y enviar</div>
+    <h2 data-i="s6.t">Revisa lo que configuramos contigo</h2>
+    <p class="mut" data-i="s6.1">Esto viajará a nuestro equipo de All-io para montar tu CRM. Nada de esto se publica: es tu presupuesto privado.</p>
+    <div id="resumen"></div>
+    <div class="qlabel" data-i="s6.missing">¿Falta algo importante que quieras en el CRM y no viste aquí?</div>
+    <textarea class="field" id="c-missing" data-ph="s6.phmissing" placeholder="Cuéntanos qué más necesitas" style="min-height:64px;resize:vertical"></textarea>
+    <div class="nav">
+      <button class="btn btn-back" onclick="go(5)" data-i="btn.back">←</button>
+      <button class="btn btn-next" onclick="send()" data-i="btn.send">Enviar configuración</button>
+    </div>
+  </div>
+
+  <footer data-i="foot">All-io — software a medida. Tus datos se usan solo para montar tu configuración.</footer>
+</div>
+
+<script>
+const I18N={
+ es:{
+  "s0.kick":"Sobre el servicio",
+  "s0.t":"Tu CRM listo para trabajar, ajustado a tu negocio",
+  "s0.1":"Somos All-io, desarrollo de software. Te montamos un sistema de gestión de clientes que responde por WhatsApp, organiza tu cartera y te deja los números que importan.",
+  "s0.2":"Este cuestionario guía el montaje. Por cada área te mostramos lo que el sistema sabe hacer y eliges lo que necesitas.",
+  "btn.start":"Empezar →","btn.back":"←","btn.next":"Siguiente →","btn.send":"Enviar configuración",
+  "foot":"All-io — software a medida. Tus datos se usan solo para montar tu configuración.",
+  "s1.kick":"Tu negocio","s1.t":"Cuéntanos a qué se dedica tu actividad","s1.sector":"Sector principal",
+  "s1.nombre":"¿Cómo se llama tu negocio?","s1.phnombre":"Ej. Radio Banana",
+  "s1.web":"¿Tienes página web? (opcional)","s1.phweb":"Ej. www.tunegocio.com",
+  "s1.ig":"¿Tienes Instagram u otra red? (opcional)","s1.phig":"Ej. @tunegocio",
+  "s1.o1":"Sector salud / estética (clínica dental, estética)","s1.o2":"Gastronomía / restauración","s1.o3":"Comercio / tienda / retail","s1.o4":"Servicios profesionales / consultores","s1.o5":"Productor / distribuidor","s1.o6":"Otro sector",
+  "s1.photro":"¿Cuál es tu sector?","s1.productos":"¿Qué vendes a tus clientes?",
+  "s1.p1":"Servicios / citas","s1.p2":"Productos físicos o catálogo","s1.p3":"Suscripciones / contratos","s1.p4":"Precios variables / bajo pedido",
+  "s1.people":"¿Cuántas personas atienden hoy a tus clientes?",
+  "s1.pe1":"Solo yo","s1.pe2":"2 a 5 personas","s1.pe3":"Un equipo / varias sucursales",
+  "s2.kick":"Canales de contacto","s2.t":"¿Por dónde te escriben? (elige varios)","s2.whatsapp":"WhatsApp","s2.instagram":"Instagram / redes","s2.email":"Email",
+  "s2.what":"¿Qué te preguntan más seguido por WhatsApp?","s2.w1":"Precio / costos","s2.w2":"Horarios / disponibilidad","s2.w3":"Cotizaciones / envíos","s2.w4":"Seguimiento de pedido / estado","s2.w5":"Resultados / reportes",
+  "s2.nums":"¿Cuántos números / cuentas de atención tienes?","s2.n1":"Un número","s2.n2":"Varios",
+  "s3.kick":"Tu proceso de venta","s3.t":"¿Cómo avanza un interesado hasta que compra?","s3.etapas":"Escribe tus etapas o déjalo en blanco","s3.ph":"Interesado → Cotización → Cliente",
+  "s3.ritmo":"¿En cuánto suele decidir alguien?","s3.r1":"El mismo día","s3.r2":"Entre 1 y 3 días","s3.r3":"Más de una semana",
+  "s3.prop":"¿Envías propuestas o cotizaciones formalizadas?","s3.pr1":"A mano cada vez","s3.pr2":"Con plantilla / formato fijo","s3.pr3":"No, basta con un precio por chat",
+  "s3.fup":"¿Sigues luego a quien no te compró?","s3.f1":"Sí, llamo / escribo de nuevo","s3.f2":"Solo a los que parecen más cerca","s3.f3":"Se me olvida",
+  "s4.kick":"Asistente automático de IA","s4.t":"¿Quieres que un asistente responda y gestione por ti?","s4.q":"Puede responder preguntas, registrar contactos, organizar citas, avisarte lo importante.",
+  "s4.o1":"Sí, quiero que atienda","s4.o2":"Solo responder precios / datos","s4.o3":"No por ahora, solo quiero organizar",
+  "s4.no":"¿Qué NO debería hacer solo sin avisarte?","s4.no1":"Inventar precios","s4.no2":"Prometer descuentos","s4.no3":"Cobrar","s4.no4":"Comprometer fechas",
+  "s4.auto":"¿Qué puede hacer de forma autónoma?","s4.a1":"Avisar cuando haya novedades","s4.a2":"Agendar citas / recordar","s4.a3":"Redactar y enviar seguimientos","s4.a4":"Proponer mejoras",
+  "s4.learn":"¿Quieres que aprenda de tus respuestas y de tu catálogo?","s4.l1":"De mi catálogo / precios","s4.l2":"De mis conversaciones pasadas","s4.l3":"De documentos / manuales",
+  "s4.idioma":"¿En qué idioma habla con tus clientes?",
+  "s5.kick":"Captación y marketing","s5.t":"¿Cómo consigues clientes nuevos y campañas?",
+  "s5.ads":"¿Haces publicidad pagada?","s5.a1":"Sí, quiero ver qué rinde por campaña","s5.a2":"No por ahora",
+  "s5.conv":"¿Quieres saber qué cliente vino de cada campaña?","s5.c1":"Sí, atribuir ventas a campañas","s5.c2":"Solo métricas generales",
+  "s5.listas":"¿Envías promociones a tus clientes?","s5.l1":"Sí / me gustaría","s5.l2":"No",
+  "s5.radar":"¿Te preocupa que clientes se enfríen?","s5.r1":"Sí, quiero alertas","s5.r2":"No, flujo constante",
+  "s6.kick":"Revisar y enviar","s6.t":"Revisa lo que configuramos contigo","s6.1":"Esto viajará a nuestro equipo de All-io para montar tu CRM. Nada de esto se publica: es tu presupuesto privado.",
+  "s6.missing":"¿Falta algo importante que quieras en el CRM y no viste aquí?","s6.phmissing":"Cuéntanos qué más necesitas"
+ },
+ en:{
+  "s0.kick":"About the service","s0.t":"Your CRM, ready to work and tailored to your business",
+  "s0.1":"We are All-io, a software company. We set up a customer-management system that answers on WhatsApp, organizes your leads and gives you the numbers that matter.",
+  "s0.2":"This questionnaire drives the setup. For each area we show you what the system can do and you pick what you need.",
+  "btn.start":"Start →","btn.back":"←","btn.next":"Next →","btn.send":"Send configuration",
+  "foot":"All-io — custom software. Your data is used only to build your configuration.",
+  "s1.kick":"Your business","s1.t":"Tell us what your activity does","s1.sector":"Main sector",
+  "s1.nombre":"What is your business name?","s1.phnombre":"E.g. Radio Banana",
+  "s1.web":"Do you have a website? (optional)","s1.phweb":"E.g. www.yourbusiness.com",
+  "s1.ig":"Do you have Instagram or another social? (optional)","s1.phig":"E.g. @yourbusiness",
+  "s1.o1":"Health / aesthetics (dental or aesthetics clinic)","s1.o2":"Food / restaurants","s1.o3":"Shop / retail","s1.o4":"Professional services / consultants","s1.o5":"Producer / distributor","s1.o6":"Other sector",
+  "s1.photro":"What is your sector?","s1.productos":"What do you sell to your customers?",
+  "s1.p1":"Services / appointments","s1.p2":"Physical products / catalog","s1.p3":"Subscriptions / contracts","s1.p4":"Variable / made-to-order pricing",
+  "s1.people":"How many people attend your customers today?","s1.pe1":"Just me","s1.pe2":"2 to 5 people","s1.pe3":"A team / several branches",
+  "s2.kick":"Contact channels","s2.t":"Where do they write to you? (select several)","s2.whatsapp":"WhatsApp","s2.instagram":"Instagram / social","s2.email":"Email",
+  "s2.what":"What do they ask most on WhatsApp?","s2.w1":"Price / costs","s2.w2":"Hours / availability","s2.w3":"Quotes / shipping","s2.w4":"Order / status tracking","s2.w5":"Results / reports",
+  "s2.nums":"How many numbers / accounts do you have?","s2.n1":"One number","s2.n2":"Several",
+  "s3.kick":"Your sales process","s3.t":"How does a lead advance until they buy?","s3.etapas":"Write your stages or leave blank","s3.ph":"Lead → Quote → Customer",
+  "s3.ritmo":"How long does it take them to decide?","s3.r1":"Same day","s3.r2":"1 to 3 days","s3.r3":"More than a week",
+  "s3.prop":"Do you send formal proposals?","s3.pr1":"By hand each time","s3.pr2":"With a fixed template","s3.pr3":"No, a price on chat is enough",
+  "s3.fup":"Do you follow up with non-buyers?","s3.f1":"Yes, I call / write again","s3.f2":"Only the closer ones","s3.f3":"I forget",
+  "s4.kick":"AI assistant","s4.t":"Do you want an assistant to answer and manage for you?","s4.q":"It can answer questions, log contacts, schedule appointments, flag what matters.",
+  "s4.o1":"Yes, I want it to handle","s4.o2":"Only answer price / data","s4.o3":"Not now, just organize",
+  "s4.no":"What should it NOT do alone?","s4.no1":"Invent prices","s4.no2":"Promise discounts","s4.no3":"Charge","s4.no4":"Commit to dates",
+  "s4.auto":"What should it do autonomously?","s4.a1":"Alert about news","s4.a2":"Schedule / remind","s4.a3":"Draft and send follow-ups","s4.a4":"Suggest improvements",
+  "s4.learn":"Should it learn from your answers and catalog?","s4.l1":"From my catalog / prices","s4.l2":"From my past chats","s4.l3":"From documents / manuals",
+  "s4.idioma":"What language does it speak with your customers?",
+  "s5.kick":"Acquisition & marketing","s5.t":"How do you get new customers and campaigns?",
+  "s5.ads":"Do you run paid ads?","s5.a1":"Yes, I want per-campaign performance","s5.a2":"Not now",
+  "s5.conv":"Do you want to know which customer came from each campaign?","s5.c1":"Yes, attribute sales to campaigns","s5.c2":"Only overall metrics",
+  "s5.listas":"Do you send (or want to send) promos to customers?","s5.l1":"Yes / I would like","s5.l2":"No",
+  "s5.radar":"Worried about leads going cold?","s5.r1":"Yes, I want alerts","s5.r2":"No, steady flow",
+  "s6.kick":"Review & send","s6.t":"Review what we set up with you","s6.1":"This goes to our All-io team to build your CRM. Nothing is published.",
+  "s6.missing":"Anything important you want in the CRM that you didn't see here?","s6.phmissing":"Tell us what else you need"
+ },
+ it:{
+  "s0.kick":"Sul servizio","s0.t":"Il tuo CRM pronto al lavoro, su misura per la tua attività",
+  "s0.1":"Siamo All-io, sviluppo software. Ti montiamo un sistema di gestione clienti che risponde su WhatsApp, organizza la tua clientela e ti dà i numeri che contano.",
+  "s0.2":"Questo questionario guida il setup. Per ogni area ti mostriamo cosa sa fare il sistema e scegli ciò che ti serve.",
+  "btn.start":"Inizia →","btn.back":"←","btn.next":"Avanti →","btn.send":"Invia configurazione",
+  "foot":"All-io — software su misura. I tuoi dati servono solo a costruire la tua configurazione.",
+  "s1.kick":"La tua attività","s1.t":"Dicci di cosa si occupa la tua attività","s1.sector":"Settore principale",
+  "s1.nombre":"Come si chiama la tua attività?","s1.phnombre":"Es. Radio Banana",
+  "s1.web":"Hai un sito web? (opzionale)","s1.phweb":"Es. www.tuaazienda.com",
+  "s1.ig":"Hai Instagram o un altro social? (opzionale)","s1.phig":"Es. @tuaazienda",
+  "s1.o1":"Salute / estetica (clinica dentale, estetica)","s1.o2":"Gastronomia / ristorazione","s1.o3":"Negozio / retail","s1.o4":"Servizi professionali / consulenti","s1.o5":"Produttore / distributore","s1.o6":"Altro settore",
+  "s1.photro":"Di che settore sei?","s1.productos":"Cosa vendi ai tuoi clienti?",
+  "s1.p1":"Servizi / appuntamenti","s1.p2":"Prodotti fisici / catalogo","s1.p3":"Abbonamenti / contratti","s1.p4":"Prezzi variabili / su ordinazione",
+  "s1.people":"Quante persone oggi seguono i tuoi clienti?","s1.pe1":"Solo io","s1.pe2":"Da 2 a 5 persone","s1.pe3":"Un team / più sedi",
+  "s2.kick":"Canali di contatto","s2.t":"Da dove ti scrivono? (seleziona più opzioni)","s2.whatsapp":"WhatsApp","s2.instagram":"Instagram / social","s2.email":"Email",
+  "s2.what":"Cosa ti chiedono di più su WhatsApp?","s2.w1":"Prezzo / costi","s2.w2":"Orari / disponibilità","s2.w3":"Preventivi / spedizioni","s2.w4":"Stato ordine / avanzamento","s2.w5":"Risultati / report",
+  "s2.nums":"Quanti numeri / account di assistenza hai?","s2.n1":"Un numero","s2.n2":"Più di uno",
+  "s3.kick":"Il tuo processo di vendita","s3.t":"Come avanza un interessato fino all'acquisto?","s3.etapas":"Scrivi le tue fasi o lascia vuoto","s3.ph":"Interessato → Preventivo → Cliente",
+  "s3.ritmo":"Quanto ci mette di solito a decidere?","s3.r1":"Lo stesso giorno","s3.r2":"Da 1 a 3 giorni","s3.r3":"Più di una settimana",
+  "s3.prop":"Invii proposte o preventivi formali?","s3.pr1":"A mano ogni volta","s3.pr2":"Con modello / formato fisso","s3.pr3":"No, basta il prezzo in chat",
+  "s3.fup":"Segui poi chi non ti ha comprato?","s3.f1":"Sì, richiamo / riscrivo","s3.f2":"Solo i più vicini","s3.f3":"Mi dimentico",
+  "s4.kick":"Assistente IA automatico","s4.t":"Vuoi un assistente che risponda e gestisca per te?","s4.q":"Può rispondere alle domande, registrare i contatti, organizzare appuntamenti, segnalarti l'importante.",
+  "s4.o1":"Sì, voglio che gestisca","s4.o2":"Solo rispondere a prezzi / dati","s4.o3":"Non per ora, solo organizzare",
+  "s4.no":"Cosa NON deve fare da solo senza avvisarti?","s4.no1":"Inventare prezzi","s4.no2":"Promettere sconti","s4.no3":"Riscuotere","s4.no4":"Impegnarsi su date",
+  "s4.auto":"Cosa può fare in autonomia?","s4.a1":"Avvisare quando ci sono novità","s4.a2":"Fissare appuntamenti / ricordare","s4.a3":"Scrivere e inviare follow-up","s4.a4":"Proporre migliorie",
+  "s4.learn":"Vuoi che impari dalle tue risposte e dal tuo catalogo?","s4.l1":"Dal mio catalogo / prezzi","s4.l2":"Dalle mie chat passate","s4.l3":"Da documenti / manuali",
+  "s4.idioma":"In che lingua parla con i tuoi clienti?",
+  "s5.kick":"Acquisizione e marketing","s5.t":"Come procuri nuovi clienti e campagne?",
+  "s5.ads":"Fai pubblicità a pagamento?","s5.a1":"Sì, voglio vedere cosa rende per campagna","s5.a2":"Non per ora",
+  "s5.conv":"Vuoi sapere quale cliente arriva da ogni campagna?","s5.c1":"Sì, attribuire le vendite alle campagne","s5.c2":"Solo metriche generali",
+  "s5.listas":"Invii promozioni ai tuoi clienti?","s5.l1":"Sì / mi piacerebbe","s5.l2":"No",
+  "s5.radar":"Ti preoccupa che i clienti si raffreddino?","s5.r1":"Sì, voglio allarmi","s5.r2":"No, flusso costante",
+  "s6.kick":"Rivedi e invia","s6.t":"Rivedi quello che configuriamo con te","s6.1":"Questo arriverà al team All-io per montare il tuo CRM. Nulla viene pubblicato.",
+  "s6.missing":"Manca qualcosa di importante che vuoi nel CRM e non hai visto qui?","s6.phmissing":"Raccontaci cos'altro ti serve"
+ }
+};
+var LANG='es', TOTAL=6;
+function t(k){return (I18N[LANG]&&I18N[LANG][k])||(I18N.es[k])||k;}
+function tr(){var k=document.querySelectorAll('[data-i]');k.forEach(function(e){e.textContent=t(e.dataset.i);});
+ document.querySelectorAll('[data-ph]').forEach(function(e){e.placeholder=t(e.dataset.ph);});}
+function apply(l){LANG=l;document.querySelectorAll('#lang button').forEach(function(b){b.classList.toggle('on',b.dataset.l===l);});tr();renderResumen();}
+document.querySelectorAll('#lang button').forEach(function(b){b.onclick=function(){apply(b.dataset.l);};});
+var saved='';try{saved=localStorage.getItem('allio-lang');}catch(e){}
+if(saved&&['es','en','it'].indexOf(saved)>-1)LANG=saved;
+function go(n){
+ document.querySelectorAll('.step').forEach(function(s){s.classList.toggle('on',+s.dataset || s.id==='s'+n);});
+ document.querySelectorAll('.step').forEach(function(s){if(s.id==='s'+n)s.classList.add('on');else s.classList.remove('on');});
+ document.getElementById('bar').style.width=(((n+1)/(TOTAL+1))*100)+'%';
+ var b=document.getElementById('bagente');
+ if(b&&n===4)b.style.display=(selVal4()==='si'||selVal4()==='parcial')?'block':'none';
+ if(b&&selVal4()==='si')b.style.display='block';
+ if(n===6)renderResumen();
+}
+function pick(el){var c=el.parentElement;c.querySelectorAll('.opt').forEach(function(o){o.classList.remove('sel');});el.classList.add('sel');
+ var t=el.dataset.i||el.dataset.sel;
+ // ramo "otro sector"
+ var otro=document.getElementById('b-otro');if(otro)otro.style.display=(t==='s1.o6')?'block':'none';
+ // ramo agent
+ var bag=document.getElementById('bagente');if(bag&&c.id==='s4')bag.style.display=(t==='s4.o3')?'none':'block';
+ // ramo ads
+ var bads=document.getElementById('bads');if(bads&&c.id==='s5')bads.style.display=(t==='s5.a1')?'block':'none';
+ renderResumen();}
+function chip(el){el.classList.toggle('sel');renderResumen();}
+function g(id){return document.getElementById(id);}
+function txt(s){return (s||'').replace(/\s+/g,' ').trim();}
+function selVal(container){var o=container.querySelector('.opt.sel');if(!o)return txt('—');var k=o.dataset.i||o.dataset.sel;return k?t(k):txt(o.textContent);}
+function selVal4(){var s=g('s4');var o=s.querySelector('.opts .opt.sel');if(!o)return txt('—');var k=o.dataset.i||o.dataset.sel;return k?t(k):txt(o.textContent);}
+function multiSel(container){var a=Array.from(container.querySelectorAll('.opt.sel'));if(!a.length)return txt('—');return a.map(function(o){var k=o.dataset.i||o.dataset.sel;return k?t(k):txt(o.textContent);}).join(', ');}
+function chips(id){var a=Array.from(document.querySelectorAll('#'+id+' .chip.sel'));if(!a.length)return txt('—');return a.map(function(c){return c.textContent.trim();}).join(', ');}
+['c-nombre','c-web','c-ig','c-otro','c3','c-missing'].forEach(function(id){var e=g(id);if(e)e.addEventListener('input',renderResumen);});
+function optOf(sec, idx){var s=g(sec);var groups=s.querySelectorAll('.opts');if(!groups[idx])return null;var o=groups[idx].querySelector('.opt.sel');if(!o)return null;var k=o.dataset.i||o.dataset.sel;return k?t(k):txt(o.textContent);}
+function collect(){
+ return {
+  nombre: txt(g('c-nombre')&&g('c-nombre').value) || 'No especificado',
+  web: txt(g('c-web')&&g('c-web').value) || '—',
+  ig: txt(g('c-ig')&&g('c-ig').value) || '—',
+  sector: (txt(g('c-otro')&&g('c-otro').value)) || optOf('s1',0) || 'No especificado',
+  vende: chips('chips-products'),
+  personas: optOf('s1',1) || txt('—'),
+  canal: multiSel(g('s2').querySelector('.opts')),
+  preguntas: chips('chips-what'),
+  numeros: optOf('s2',1) || txt('—'),
+  etapas: txt(g('c3').value) || t('s3.ph'),
+  ritmo: optOf('s3',0) || txt('—'),
+  propuesta: optOf('s3',1) || txt('—'),
+  fup: optOf('s3',2) || txt('—'),
+  agente: selVal4() || txt('—'),
+  noHacer: chips('chips-nohacer'),
+  auto: chips('chips-auto'),
+  learn: chips('chips-learn'),
+  idioma: chips('chips-idioma'),
+  ads: optOf('s5',0) || txt('—'),
+  conv: optOf('s5',1) || txt('—'),
+  listas: optOf('s5',2) || txt('—'),
+  radar: optOf('s5',3) || txt('—'),
+  missing: txt(g('c-missing')&&g('c-missing').value) || '—'
+ };
+}
+function L(k){return t(k);}
+function renderResumen(){
+ var d;
+ try{d=collect();}catch(e){d={sector:'',canal:''};}
+ var el=document.getElementById('resumen');if(!el)return;
+ el.textContent=
+'◦ '+L('s1.nombre')+'   '+d.nombre+'\n'
++'◦ '+L('s1.web')+'   '+d.web+'\n'
++'◦ '+L('s1.ig')+'   '+d.ig+'\n'
++'◦ '+L('s1.kick')+'   '+d.sector+'\n'
++'◦ '+L('s1.productos')+'   '+d.vende+'\n'
++'◦ '+L('s1.people')+'   '+d.personas+'\n'
++'◦ '+L('s2.t')+'   '+d.canal+'\n'
++'◦ '+L('s2.what')+'   '+d.preguntas+'\n'
++'◦ '+L('s2.nums')+'   '+d.numeros+'\n'
++'◦ '+L('s3.etapas')+'   '+d.etapas+'\n'
++'◦ '+L('s3.ritmo')+'   '+d.ritmo+'\n'
++'◦ '+L('s3.prop')+'   '+d.propuesta+'\n'
++'◦ '+L('s3.fup')+'   '+d.fup+'\n'
++'◦ '+L('s4.t')+'   '+d.agente+'\n'
++'◦ '+L('s4.no')+'   '+d.noHacer+'\n'
++'◦ '+L('s4.auto')+'   '+d.auto+'\n'
++'◦ '+L('s4.learn')+'   '+d.learn+'\n'
++'◦ '+L('s4.idioma')+'   '+d.idioma+'\n'
++'◦ '+L('s5.ads')+'   '+d.ads+'\n'
++'◦ '+L('s5.conv')+'   '+d.conv+'\n'
++'◦ '+L('s5.listas')+'   '+d.listas+'\n'
++'◦ '+L('s5.radar')+'   '+d.radar+'\n'
++'◦ '+L('s6.missing')+'   '+d.missing;}
+function send(){renderResumen();var d;try{d=collect();}catch(e){d={};}
+ var payload=Object.assign({},d,{lang:LANG,ts:new Date().toISOString(),marca_brand_placeholder:'Radio Banana'});
+ console.log('RESPUESTA:',JSON.stringify(payload,null,2));
+ // << WEBHOOK: POST a All-io. Punto de integración.
+ alert(t('s0.2'));}
+renderResumen();go(0);
+</script>
+</body>
+</html>
