@@ -111,8 +111,26 @@
     <input class="field" id="c-nombre" data-ph="s1.phnombre" placeholder="Ej. Radio Banana">
     <div class="qlabel" data-i="s1.web">¿Tienes página web? (opcional)</div>
     <input class="field" id="c-web" data-ph="s1.phweb" placeholder="Ej. www.tunegocio.com">
+    <div id="b-noweb" style="display:none">
+      <div class="qlabel" data-i="s1.webup">Si no tienes, ¿te interesaría que te creáramos la página web y la gestionemos?</div>
+      <div class="opts">
+        <div class="opt" data-sel="si_gestion" data-i="s1.wu1" onclick="pick(this)">🛠️ <span>Sí, créenla y gestiónenla</span></div>
+        <div class="opt" data-sel="si_ensenar" data-i="s1.wu2" onclick="pick(this)">🎓 <span>Sí, pero enséñenme a gestionarla</span></div>
+        <div class="opt" data-sel="precio" data-i="s1.wu3" onclick="pick(this)">💸 <span>Me interesa si el precio es bueno</span></div>
+        <div class="opt" data-sel="no" data-i="s1.wu4" onclick="pick(this)">🙅 <span>No, gracias</span></div>
+      </div>
+    </div>
     <div class="qlabel" data-i="s1.ig">¿Tienes Instagram u otra red? (opcional)</div>
     <input class="field" id="c-ig" data-ph="s1.phig" placeholder="Ej. @tunegocio">
+    <div id="b-noig" style="display:none">
+      <div class="qlabel" data-i="s1.igup">¿Te interesaría que te creáramos y gestionáramos el perfil de Instagram?</div>
+      <div class="opts">
+        <div class="opt" data-sel="si_gestion" data-i="s1.iu1" onclick="pick(this)">🛠️ <span>Sí, créenlo y gestiónenlo</span></div>
+        <div class="opt" data-sel="si_ensenar" data-i="s1.iu2" onclick="pick(this)">🎓 <span>Sí, pero enséñenme a gestionarlo</span></div>
+        <div class="opt" data-sel="precio" data-i="s1.iu3" onclick="pick(this)">💸 <span>Me interesa si el precio es bueno</span></div>
+        <div class="opt" data-sel="no" data-i="s1.iu4" onclick="pick(this)">🙅 <span>No, gracias</span></div>
+    </div>
+    </div>
     <div class="qlabel" data-i="s1.sector">Sector principal</div>
     <div class="opts">
       <div class="opt" data-sel="clinica" data-i="s1.o1" onclick="pick(this)">🦷 <span>Sector salud / estética (clínica dental, estética)</span></div>
@@ -316,6 +334,18 @@ const I18N={
   "s1.nombre":"¿Cómo se llama tu negocio?","s1.phnombre":"Ej. Radio Banana",
   "s1.web":"¿Tienes página web? (opcional)","s1.phweb":"Ej. www.tunegocio.com",
   "s1.ig":"¿Tienes Instagram u otra red? (opcional)","s1.phig":"Ej. @tunegocio",
+  "s1.webup":"Se non ce l'hai, ti creiamo e gestiamo il sito?",
+  "s1.wu1":"Sì, createlo e gestitelo","s1.wu2":"Sì, ma insegnatemi a gestirlo","s1.wu3":"Interessato se il prezzo è giusto","s1.wu4":"No, grazie",
+  "s1.igup":"Vi creiamo e gestiamo il profilo Instagram?",
+  "s1.iu1":"Sì, createlo e gestitelo","s1.iu2":"Sì, ma insegnatemi a gestirlo","s1.iu3":"Interessato se il prezzo è giusto","s1.iu4":"No, grazie",
+  "s1.webup":"If you don't have one, should we build and manage your website?",
+  "s1.wu1":"Yes, build it and manage it","s1.wu2":"Yes, but teach me to manage it","s1.wu3":"Interested if the price is right","s1.wu4":"No, thanks",
+  "s1.igup":"Should we create and manage your Instagram profile?",
+  "s1.iu1":"Yes, create it and manage it","s1.iu2":"Yes, but teach me to manage it","s1.iu3":"Interested if the price is right","s1.iu4":"No, thanks",
+  "s1.webup":"Si no tienes web, ¿te creamos y gestionamos la página?",
+  "s1.wu1":"Sí, créenla y gestiónenla","s1.wu2":"Sí, pero enséñenme a gestionarla","s1.wu3":"Me interesa si el precio es bueno","s1.wu4":"No, gracias",
+  "s1.igup":"¿Te creamos y gestionamos el perfil de Instagram?",
+  "s1.iu1":"Sí, créenlo y gestiónenlo","s1.iu2":"Sí, pero enséñenme a gestionarlo","s1.iu3":"Me interesa si el precio es bueno","s1.iu4":"No, gracias",
   "s1.o1":"Sector salud / estética (clínica dental, estética)","s1.o2":"Gastronomía / restauración","s1.o3":"Comercio / tienda / retail","s1.o4":"Servicios profesionales / consultores","s1.o5":"Productor / distribuidor","s1.o6":"Otro sector",
   "s1.photro":"¿Cuál es tu sector?","s1.productos":"¿Qué vendes a tus clientes?",
   "s1.p1":"Servicios / citas","s1.p2":"Productos físicos o catálogo","s1.p3":"Suscripciones / contratos","s1.p4":"Precios variables / bajo pedido",
@@ -452,16 +482,21 @@ function selVal(container){var o=container.querySelector('.opt.sel');if(!o)retur
 function selVal4(){var s=g('s4');var o=s.querySelector('.opts .opt.sel');if(!o)return txt('—');var k=o.dataset.i||o.dataset.sel;return k?t(k):txt(o.textContent);}
 function multiSel(container){var a=Array.from(container.querySelectorAll('.opt.sel'));if(!a.length)return txt('—');return a.map(function(o){var k=o.dataset.i||o.dataset.sel;return k?t(k):txt(o.textContent);}).join(', ');}
 function chips(id){var a=Array.from(document.querySelectorAll('#'+id+' .chip.sel'));if(!a.length)return txt('—');return a.map(function(c){return c.textContent.trim();}).join(', ');}
+function toggleUpsell(){var w=g('c-web'),ig=g('c-ig'),bw=g('b-noweb'),bi=g('b-noig');if(bw)bw.style.display=(w&&txt(w.value))?'none':'block';if(bi)bi.style.display=(ig&&txt(ig.value))?'none':'block';}
 ['c-nombre','c-web','c-ig','c-otro','c3','c-missing','c-resp-nome','c-resp-wa'].forEach(function(id){var e=g(id);if(e)e.addEventListener('input',renderResumen);});
+['c-web','c-ig'].forEach(function(id){var e=g(id);if(e)e.addEventListener('input',function(){toggleUpsell();renderResumen();});});
+toggleUpsell();
 function optOf(sec, idx){var s=g(sec);var groups=s.querySelectorAll('.opts');if(!groups[idx])return null;var o=groups[idx].querySelector('.opt.sel');if(!o)return null;var k=o.dataset.i||o.dataset.sel;return k?t(k):txt(o.textContent);}
 function collect(){
  return {
   nombre: txt(g('c-nombre')&&g('c-nombre').value) || 'No especificado',
   web: txt(g('c-web')&&g('c-web').value) || '—',
+  webInteres: optOf('s1',0) || '—',
   ig: txt(g('c-ig')&&g('c-ig').value) || '—',
-  sector: (txt(g('c-otro')&&g('c-otro').value)) || optOf('s1',0) || 'No especificado',
+  igInteres: optOf('s1',1) || '—',
+  sector: (txt(g('c-otro')&&g('c-otro').value)) || optOf('s1',2) || 'No especificado',
   vende: chips('chips-products'),
-  personas: optOf('s1',1) || txt('—'),
+  personas: optOf('s1',3) || txt('—'),
   canal: multiSel(g('s2').querySelector('.opts')),
   preguntas: chips('chips-what'),
   numeros: optOf('s2',1) || txt('—'),
@@ -491,7 +526,9 @@ function renderResumen(){
  el.textContent=
 '◦ '+L('s1.nombre')+'   '+d.nombre+'\n'
 +'◦ '+L('s1.web')+'   '+d.web+'\n'
++'◦ '+L('s1.webup')+'   '+d.webInteres+'\n'
 +'◦ '+L('s1.ig')+'   '+d.ig+'\n'
++'◦ '+L('s1.igup')+'   '+d.igInteres+'\n'
 +'◦ '+L('s1.kick')+'   '+d.sector+'\n'
 +'◦ '+L('s1.productos')+'   '+d.vende+'\n'
 +'◦ '+L('s1.people')+'   '+d.personas+'\n'
@@ -513,7 +550,7 @@ function renderResumen(){
 +'◦ '+L('s5.radar')+'   '+d.radar+'\n'
 +'◦ '+L('s6.missing')+'   '+d.missing+'\n'
 +'◦ '+L('s6.contato')+'   '+d.respNome+' · '+d.respWa;}
-var WEBHOOK_URL='/api/v1/webhooks/in/onbtest2026token'; // endpoint sulla stessa origine
+var WEBHOOK_URL=''; // << URL del webhook All-io: https://<host>/api/v1/webhooks/in/<token>
 function send(){renderResumen();var d;try{d=collect();}catch(e){d={};}
  var payload=Object.assign({},d,{lang:LANG,ts:new Date().toISOString(),external_id:'onb-'+Date.now()+'-'+Math.random().toString(36).slice(2,8)});
  if(WEBHOOK_URL){
