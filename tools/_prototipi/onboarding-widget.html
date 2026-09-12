@@ -288,6 +288,9 @@
     <div class="kicker" data-i="s6.kick">Revisar y enviar</div>
     <h2 data-i="s6.t">Revisa lo que configuramos contigo</h2>
     <p class="mut" data-i="s6.1">Esto viajará a nuestro equipo de All-io para montar tu CRM. Nada de esto se publica: es tu presupuesto privado.</p>
+    <div class="qlabel" data-i="s6.contato">¿Cómo te contactamos para entregarte la propuesta?</div>
+    <input class="field" id="c-resp-nome" data-ph="s6.phcnome" placeholder="Tu nombre">
+    <input class="field" id="c-resp-wa" data-ph="s6.phcwa" placeholder="Tu WhatsApp">
     <div id="resumen"></div>
     <div class="qlabel" data-i="s6.missing">¿Falta algo importante que quieras en el CRM y no viste aquí?</div>
     <textarea class="field" id="c-missing" data-ph="s6.phmissing" placeholder="Cuéntanos qué más necesitas" style="min-height:64px;resize:vertical"></textarea>
@@ -337,7 +340,9 @@ const I18N={
   "s5.listas":"¿Envías promociones a tus clientes?","s5.l1":"Sí / me gustaría","s5.l2":"No",
   "s5.radar":"¿Te preocupa que clientes se enfríen?","s5.r1":"Sí, quiero alertas","s5.r2":"No, flujo constante",
   "s6.kick":"Revisar y enviar","s6.t":"Revisa lo que configuramos contigo","s6.1":"Esto viajará a nuestro equipo de All-io para montar tu CRM. Nada de esto se publica: es tu presupuesto privado.",
-  "s6.missing":"¿Falta algo importante que quieras en el CRM y no viste aquí?","s6.phmissing":"Cuéntanos qué más necesitas"
+  "s6.missing":"¿Falta algo importante que quieras en el CRM y no viste aquí?","s6.phmissing":"Cuéntanos qué más necesitas",
+  "s6.contato":"¿Cómo te contactamos para entregarte la propuesta?","s6.phcnome":"Tu nombre","s6.phcwa":"Tu WhatsApp (ej. +593 ...)",
+  "s6.ok":"¡Listo! Recibimos tu configuración. Te contactamos por WhatsApp con la propuesta.","s6.err":"Ups, no pudimos enviar. Intenta de nuevo o escríbenos por WhatsApp."
  },
  en:{
   "s0.kick":"About the service","s0.t":"Your CRM, ready to work and tailored to your business",
@@ -372,7 +377,9 @@ const I18N={
   "s5.listas":"Do you send (or want to send) promos to customers?","s5.l1":"Yes / I would like","s5.l2":"No",
   "s5.radar":"Worried about leads going cold?","s5.r1":"Yes, I want alerts","s5.r2":"No, steady flow",
   "s6.kick":"Review & send","s6.t":"Review what we set up with you","s6.1":"This goes to our All-io team to build your CRM. Nothing is published.",
-  "s6.missing":"Anything important you want in the CRM that you didn't see here?","s6.phmissing":"Tell us what else you need"
+  "s6.missing":"Anything important you want in the CRM that you didn't see here?","s6.phmissing":"Tell us what else you need",
+  "s6.contato":"How should we contact you to deliver the proposal?","s6.phcnome":"Your name","s6.phcwa":"Your WhatsApp (e.g. +1 ...)",
+  "s6.ok":"All set! We received your configuration. We'll reach out on WhatsApp with the proposal.","s6.err":"Oops, couldn't send. Try again or message us on WhatsApp."
  },
  it:{
   "s0.kick":"Sul servizio","s0.t":"Il tuo CRM pronto al lavoro, su misura per la tua attività",
@@ -407,7 +414,9 @@ const I18N={
   "s5.listas":"Invii promozioni ai tuoi clienti?","s5.l1":"Sì / mi piacerebbe","s5.l2":"No",
   "s5.radar":"Ti preoccupa che i clienti si raffreddino?","s5.r1":"Sì, voglio allarmi","s5.r2":"No, flusso costante",
   "s6.kick":"Rivedi e invia","s6.t":"Rivedi quello che configuriamo con te","s6.1":"Questo arriverà al team All-io per montare il tuo CRM. Nulla viene pubblicato.",
-  "s6.missing":"Manca qualcosa di importante che vuoi nel CRM e non hai visto qui?","s6.phmissing":"Raccontaci cos'altro ti serve"
+  "s6.missing":"Manca qualcosa di importante che vuoi nel CRM e non hai visto qui?","s6.phmissing":"Raccontaci cos'altro ti serve",
+  "s6.contato":"Come ti contattiamo per consegnarti la proposta?","s6.phcnome":"Il tuo nome","s6.phcwa":"Il tuo WhatsApp (es. +39 ...)",
+  "s6.ok":"Fatto! Abbiamo ricevuto la tua configurazione. Ti scriviamo su WhatsApp con la proposta.","s6.err":"Ops, invio non riuscito. Riprova o scrivici su WhatsApp."
  }
 };
 var LANG='es', TOTAL=6;
@@ -443,7 +452,7 @@ function selVal(container){var o=container.querySelector('.opt.sel');if(!o)retur
 function selVal4(){var s=g('s4');var o=s.querySelector('.opts .opt.sel');if(!o)return txt('—');var k=o.dataset.i||o.dataset.sel;return k?t(k):txt(o.textContent);}
 function multiSel(container){var a=Array.from(container.querySelectorAll('.opt.sel'));if(!a.length)return txt('—');return a.map(function(o){var k=o.dataset.i||o.dataset.sel;return k?t(k):txt(o.textContent);}).join(', ');}
 function chips(id){var a=Array.from(document.querySelectorAll('#'+id+' .chip.sel'));if(!a.length)return txt('—');return a.map(function(c){return c.textContent.trim();}).join(', ');}
-['c-nombre','c-web','c-ig','c-otro','c3','c-missing'].forEach(function(id){var e=g(id);if(e)e.addEventListener('input',renderResumen);});
+['c-nombre','c-web','c-ig','c-otro','c3','c-missing','c-resp-nome','c-resp-wa'].forEach(function(id){var e=g(id);if(e)e.addEventListener('input',renderResumen);});
 function optOf(sec, idx){var s=g(sec);var groups=s.querySelectorAll('.opts');if(!groups[idx])return null;var o=groups[idx].querySelector('.opt.sel');if(!o)return null;var k=o.dataset.i||o.dataset.sel;return k?t(k):txt(o.textContent);}
 function collect(){
  return {
@@ -469,7 +478,9 @@ function collect(){
   conv: optOf('s5',1) || txt('—'),
   listas: optOf('s5',2) || txt('—'),
   radar: optOf('s5',3) || txt('—'),
-  missing: txt(g('c-missing')&&g('c-missing').value) || '—'
+  missing: txt(g('c-missing')&&g('c-missing').value) || '—',
+  respNome: txt(g('c-resp-nome')&&g('c-resp-nome').value) || 'No especificado',
+  respWa: txt(g('c-resp-wa')&&g('c-resp-wa').value) || txt('—')
  };
 }
 function L(k){return t(k);}
@@ -500,12 +511,20 @@ function renderResumen(){
 +'◦ '+L('s5.conv')+'   '+d.conv+'\n'
 +'◦ '+L('s5.listas')+'   '+d.listas+'\n'
 +'◦ '+L('s5.radar')+'   '+d.radar+'\n'
-+'◦ '+L('s6.missing')+'   '+d.missing;}
++'◦ '+L('s6.missing')+'   '+d.missing+'\n'
++'◦ '+L('s6.contato')+'   '+d.respNome+' · '+d.respWa;}
+var WEBHOOK_URL=''; // << URL del webhook All-io: https://<host>/api/v1/webhooks/in/<token>
 function send(){renderResumen();var d;try{d=collect();}catch(e){d={};}
- var payload=Object.assign({},d,{lang:LANG,ts:new Date().toISOString(),marca_brand_placeholder:'Radio Banana'});
- console.log('RESPUESTA:',JSON.stringify(payload,null,2));
- // << WEBHOOK: POST a All-io. Punto de integración.
- alert(t('s0.2'));}
+ var payload=Object.assign({},d,{lang:LANG,ts:new Date().toISOString(),external_id:'onb-'+Date.now()+'-'+Math.random().toString(36).slice(2,8)});
+ if(WEBHOOK_URL){
+  fetch(WEBHOOK_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
+   .then(function(r){return r.json().then(function(j){return {status:r.status,j:j};});})
+   .then(function(res){ if(res.status>=200&&res.status<300){alert(t('s6.ok'));} else {console.error('webhook',res.status,res.j);alert(t('s6.err')+' ('+res.status+')');} })
+   .catch(function(e){console.error(e);alert(t('s6.err'));});
+ } else {
+  console.log('RESPUESTA (WEBHOOK_URL vuoto, solo log):',JSON.stringify(payload,null,2));
+  alert(t('s6.ok'));
+ }}
 renderResumen();go(0);
 </script>
 </body>
