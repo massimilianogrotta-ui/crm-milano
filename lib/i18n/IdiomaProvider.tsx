@@ -2,6 +2,7 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 
 import { traduzir } from "./dicionario";
+import { tagDeIdioma } from "./datas";
 import { normalizarIdioma, IDIOMA_PADRAO, type Idioma } from "./idiomas";
 
 /**
@@ -81,6 +82,17 @@ export function IdiomaProvider({
     return () => {
       idiomaFora = IDIOMA_PADRAO;
     };
+  }, [idioma]);
+
+  // O atributo `lang` segue o idioma em vigor: leitores de tela e a
+  // pontuação nativa (`Intl`) leem a tag do documento, que no layout raiz é
+  // fixa em "pt-BR". Sem isto, um operador em italiano teria a interface em
+  // italiano mas o <html lang="pt-BR"> de sempre — acessibilidade errada no
+  // momento em que a tradução acerta.
+  useEffect(() => {
+    if (typeof document !== "undefined") {
+      document.documentElement.lang = tagDeIdioma(idioma);
+    }
   }, [idioma]);
 
   const valor = useMemo(() => ({ idioma, aplicar: setIdioma }), [idioma]);

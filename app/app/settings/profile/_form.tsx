@@ -108,6 +108,8 @@ export function ProfileForm({
                     conclui que o sistema está quebrado.
                     `en-US` saiu pela mesma razão: nunca teve tradução. */}
                 <SelectItem value="es">Español</SelectItem>
+                <SelectItem value="it">Italiano</SelectItem>
+                <SelectItem value="en">English</SelectItem>
               </SelectContent>
             </Select>
           </div>

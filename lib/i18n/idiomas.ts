@@ -45,7 +45,7 @@
  * alcançar quem entra depois e nunca abriu o próprio perfil.
  */
 
-export const IDIOMAS = ["pt-BR", "es"] as const;
+export const IDIOMAS = ["pt-BR", "es", "it", "en"] as const;
 export type Idioma = (typeof IDIOMAS)[number];
 
 export const IDIOMA_PADRAO: Idioma = "pt-BR";
