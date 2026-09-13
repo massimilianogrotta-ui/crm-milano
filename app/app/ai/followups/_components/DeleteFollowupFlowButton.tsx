@@ -82,7 +82,7 @@ export function DeleteFollowupFlowButton({
                 });
               }}
             >
-              {del.isPending ? "Excluindo…" : "Excluir"}
+              {del.isPending ? t("Excluindo…") : t("Excluir")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

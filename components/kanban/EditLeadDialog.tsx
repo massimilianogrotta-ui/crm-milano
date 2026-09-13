@@ -18,7 +18,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useEditLead } from "@/hooks/kanban/useUpdateLead";
 import type { Lead } from "@/lib/types/leads";
 import { updateLeadSchema, type UpdateLeadInput } from "@/lib/schemas/leads";
-import { parseReaisToCents } from "@/lib/money";
+import { parseReaisToCents, moedaServidaOu, simboloDaMoeda } from "@/lib/money";
 import { EcoDoValor } from "./EcoDoValor";
 
 interface FormShape {
@@ -44,6 +44,7 @@ function centsToReais(cents: number | null | undefined): string {
 export function EditLeadDialog({ open, onOpenChange, lead, pipelineId }: Props) {
   const t = useT();
   const edit = useEditLead(pipelineId);
+  const currency = moedaServidaOu(lead.currency);
 
   const form = useForm<FormShape>({
     defaultValues: {
@@ -136,14 +137,14 @@ export function EditLeadDialog({ open, onOpenChange, lead, pipelineId }: Props) 
 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
-              <Label htmlFor="valueReais">{t("Valor (R$)")}</Label>
+              <Label htmlFor="valueReais">{t("Valor")} ({simboloDaMoeda(currency)})</Label>
               <Input
                 id="valueReais"
                 inputMode="decimal"
                 placeholder="0,00"
                 {...form.register("valueReais")}
               />
-              <EcoDoValor control={form.control} />
+              <EcoDoValor control={form.control} currency={currency} />
               {form.formState.errors.valueReais && (
                 <p className="text-xs text-error-fg">
                   {form.formState.errors.valueReais.message}

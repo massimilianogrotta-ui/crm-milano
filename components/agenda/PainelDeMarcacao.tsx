@@ -513,8 +513,8 @@ export function PainelDeMarcacao({
           // bloquear em silêncio — faz a pessoa achar que a agenda está errada.
           <p data-testid="fontes-defasadas" className="mb-2 text-[11px] leading-4 text-warning">
             {fontesDefasadas.length === 1
-              ? `A agenda conectada ${fontesDefasadas[0]?.nome ?? ""} não atualiza desde ${fontesDefasadas[0]?.desde ?? "algum tempo"}. Os horários dela seguem bloqueados por precaução.`
-              : `${fontesDefasadas.length} agendas conectadas não estão atualizando. Os horários delas seguem bloqueados por precaução.`}
+              ? `${t("A agenda conectada")} ${fontesDefasadas[0]?.nome ?? ""} ${t("não atualiza desde")} ${fontesDefasadas[0]?.desde ?? t("algum tempo")}. ${t("Os horários dela seguem bloqueados por precaução.")}`
+              : `${fontesDefasadas.length} ${t("agendas conectadas não estão atualizando")}. ${t("Os horários delas seguem bloqueados por precaução.")}`}
           </p>
         )}
 

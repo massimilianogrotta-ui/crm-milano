@@ -135,7 +135,7 @@ export function MatchReplyForm({
               commit({ branches: next, graceMin, saveTo, ifExists });
             }}
           >
-            <Plus size={14} aria-hidden className="mr-1" /> Adicionar regra
+            <Plus size={14} aria-hidden className="mr-1" /> {t("Adicionar regra")}
           </Button>
         )}
       </div>

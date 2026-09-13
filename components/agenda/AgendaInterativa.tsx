@@ -287,10 +287,10 @@ export function AgendaInterativa({
           </p>
           <div className="flex shrink-0 gap-2">
             <Button variant="ghost" size="sm" onClick={() => setPendente(null)}>
-              Cancelar
+              {t("Cancelar")}
             </Button>
             <Button size="sm" data-testid="confirmar-remarcacao-botao" onClick={confirmar}>
-              Remarcar
+              {t("Remarcar")}
             </Button>
           </div>
         </div>

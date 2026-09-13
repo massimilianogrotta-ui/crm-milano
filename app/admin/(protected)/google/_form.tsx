@@ -153,7 +153,7 @@ export function FormularioDoGoogle({
               })
             }
           >
-            {salvando ? "Salvando…" : "Salvar"}
+            {salvando ? t("Salvando…") : t("Salvar")}
           </Button>
         </div>
       </Card>

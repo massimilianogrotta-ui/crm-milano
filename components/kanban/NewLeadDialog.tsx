@@ -27,6 +27,7 @@ import { useCreateLead } from "@/hooks/kanban/useCreateLead";
 import type { Stage } from "@/lib/kanban/types";
 import { createLeadSchema, type CreateLeadInput } from "@/lib/schemas/leads";
 import { parseReaisToCents } from "@/lib/money";
+import { simboloDaMoeda, type MoedaServida } from "@/lib/money";
 import { EcoDoValor } from "./EcoDoValor";
 
 interface FormShape {
@@ -43,6 +44,12 @@ interface Props {
   onOpenChange: (v: boolean) => void;
   pipelineId: string;
   stages: Stage[];
+  /**
+   * A moeda da organização (`organizations.currency`). Sem isto o lead
+   * nascia sempre em BRL, mesmo numa instalação em EUR ou MXN — a raiz do
+   * "R$" aparecendo em instalação italiana.
+   */
+  currency: MoedaServida;
   /** Vincula o lead criado a este contato de origem (ex.: painel do Inbox). */
   contactId?: string | null;
   /** Depois do INSERT — o inbox relê o resumo para o lead novo aparecer no formulário. */
@@ -59,6 +66,7 @@ export function NewLeadDialog({
   onOpenChange,
   pipelineId,
   stages,
+  currency,
   contactId,
   onCreated,
 }: Props) {
@@ -104,7 +112,7 @@ export function NewLeadDialog({
       pipeline_id: pipelineId,
       stage_id: values.stage_id,
       title: values.title.trim(),
-      currency: "BRL",
+      currency,
       source: "manual",
       tags,
     };
@@ -192,14 +200,14 @@ export function NewLeadDialog({
 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
-              <Label htmlFor="valueReais">{t("Valor (R$)")}</Label>
+              <Label htmlFor="valueReais">{t("Valor")} ({simboloDaMoeda(currency)})</Label>
               <Input
                 id="valueReais"
                 inputMode="decimal"
                 placeholder="0,00"
                 {...form.register("valueReais")}
               />
-              <EcoDoValor control={form.control} />
+              <EcoDoValor control={form.control} currency={currency} />
               {form.formState.errors.valueReais && (
                 <p className="text-xs text-error-fg">
                   {form.formState.errors.valueReais.message}

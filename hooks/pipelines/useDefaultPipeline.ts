@@ -3,10 +3,12 @@ import { useQuery } from "@tanstack/react-query";
 
 import { apiClient } from "@/lib/api/client";
 import type { Pipeline, Stage } from "@/lib/kanban/types";
+import type { MoedaServida } from "@/lib/money";
 
 export interface DefaultPipelineData {
   pipeline: Pipeline;
   stages: Stage[];
+  currency: MoedaServida;
 }
 
 /** Pipeline padrão da org ativa + estágios — usado por fluxos "crie um lead

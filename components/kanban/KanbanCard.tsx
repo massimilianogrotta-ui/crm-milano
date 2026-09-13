@@ -45,11 +45,23 @@ interface KanbanCardProps {
   onOpen?: (leadId: string) => void;
 }
 
+/**
+ * ⚠️ Cópia parcial de `formatCents` (lib/money.ts) — aquela não aceita
+ * `maximumFractionDigits: 0` (o card não mostra centavos), e o comentário-
+ * fonte de `money.ts` declara esta duplicação como dívida conhecida até essa
+ * opção virar parâmetro. O que ESTA versão corrige: o locale era fixo
+ * "pt-BR" mesmo com `currency` dinâmica — um lead em EUR saía com vírgula
+ * decimal brasileira para quem opera em italiano. Deriva o locale da própria
+ * moeda, como `formatadorDa` faz.
+ */
 function formatBRL(cents: number | null, currency: string | null): string | null {
   if (cents == null) return null;
   const code = currency ?? "BRL";
   try {
-    return new Intl.NumberFormat("pt-BR", {
+    const provavel = new Intl.Locale(`und-${code.slice(0, 2)}`).maximize();
+    const tag = `${provavel.language}-${provavel.region}`;
+    const locale = Intl.NumberFormat.supportedLocalesOf(tag).length > 0 ? tag : "en-US";
+    return new Intl.NumberFormat(locale, {
       style: "currency",
       currency: code,
       maximumFractionDigits: 0,

@@ -395,7 +395,7 @@ function CamposDoFunil({
         disabled={edit.isPending}
         onClick={() => void salvar()}
       >
-        {edit.isPending ? "Salvando…" : "Salvar"}
+        {edit.isPending ? t("Salvando…") : t("Salvar")}
       </Button>
     </div>
   );
@@ -606,6 +606,7 @@ export function CRMSidePanel({ conversation }: Props) {
           onOpenChange={setLeadDialogOpen}
           pipelineId={defaultPipeline.data.pipeline.id}
           stages={defaultPipeline.data.stages}
+          currency={defaultPipeline.data.currency}
           contactId={contactId}
           onCreated={() => {
             setLeadAtivoId(null);

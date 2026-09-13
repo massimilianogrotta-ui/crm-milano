@@ -13,12 +13,21 @@
  *
  * Uso (o install.sh exporta as vars; localmente lê .env/.env.local):
  *   OWNER_EMAIL=dono@empresa.com OWNER_PASSWORD='senha-forte' \
- *   OWNER_ORG_NAME='Minha Empresa' npx tsx scripts/bootstrap-owner.ts
+ *   OWNER_ORG_NAME='Minha Empresa' APP_LOCALE=it APP_CURRENCY=EUR \
+ *   npx tsx scripts/bootstrap-owner.ts
+ *
+ * `APP_LOCALE` e `APP_CURRENCY` são independentes: espanhol se fala no
+ * México (MXN), no Equador (USD) e na Espanha (EUR). Sem `APP_CURRENCY`
+ * explícita, a organização nasce em `BRL` (default da coluna) mesmo com
+ * outro idioma — declare as duas.
  */
 
 import { createClient } from "@supabase/supabase-js";
 import * as fs from "node:fs";
 import * as path from "node:path";
+
+import { IDIOMAS } from "../lib/i18n/idiomas";
+import { MOEDAS_SERVIDAS, type MoedaServida } from "../lib/money";
 
 /** Lê env do processo; completa com .env / .env.local se rodando localmente. */
 function loadEnv(): Record<string, string> {
@@ -53,13 +62,35 @@ const ORG_NAME = env.OWNER_ORG_NAME || "Minha Empresa";
  *
  * Fecha para o padrão diante de qualquer valor desconhecido: um `.env` com
  * `APP_LOCALE=en` não pode derrubar a instalação nem escrever lixo no banco.
+ *
+ * ⚠️ A lista vem de `lib/i18n/idiomas.ts` — ANTES havia uma cópia local com
+ * só 2 dos 4 idiomas (faltavam `it` e `en`), e uma instalação com
+ * `APP_LOCALE=it` caía silenciosamente em pt-BR. Medido no cliente All-io:
+ * precisou de correção manual depois.
  */
-const IDIOMAS_SERVIDOS = ["pt-BR", "es"] as const;
-const APP_LOCALE = (IDIOMAS_SERVIDOS as readonly string[]).includes(
-  (env.APP_LOCALE ?? "").trim(),
-)
+const APP_LOCALE = (IDIOMAS as readonly string[]).includes((env.APP_LOCALE ?? "").trim())
   ? (env.APP_LOCALE as string).trim()
   : "pt-BR";
+
+/**
+ * A moeda que quem instalou escolheu, gravada na ORGANIZAÇÃO.
+ *
+ * Idioma e moeda NÃO SE DEDUZEM UM DO OUTRO: espanhol se fala no México
+ * (MXN), no Equador (USD) e na Espanha (EUR) — mesma língua, três moedas.
+ * Por isso `APP_CURRENCY` é uma variável própria, nunca inferida de
+ * `APP_LOCALE`. Sem ela, a coluna `organizations.currency` cai no DEFAULT do
+ * banco (`BRL`) — que é o bug medido no cliente All-io: `locale=it` desde o
+ * início, `currency` esquecida em `BRL` até alguém notar o "R$" na tela e
+ * corrigir à mão.
+ *
+ * Fecha para o padrão pela mesma razão do idioma: `.env` malformado não pode
+ * derrubar a instalação.
+ */
+const APP_CURRENCY: MoedaServida = (MOEDAS_SERVIDAS as readonly string[]).includes(
+  (env.APP_CURRENCY ?? "").trim().toUpperCase(),
+)
+  ? (env.APP_CURRENCY!.trim().toUpperCase() as MoedaServida)
+  : "BRL";
 
 if (!SUPABASE_URL || !SERVICE_ROLE) {
   throw new Error("Faltam NEXT_PUBLIC_SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY.");
@@ -122,6 +153,7 @@ async function ensureOrg(ownerId: string): Promise<string> {
       display_name: ORG_NAME,
       legal_name: ORG_NAME,
       locale: APP_LOCALE,
+      currency: APP_CURRENCY,
       created_by: ownerId,
     } as never)
     .select("id")

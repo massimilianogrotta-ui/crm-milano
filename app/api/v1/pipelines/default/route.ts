@@ -13,6 +13,7 @@ import { requireRole } from "@/lib/auth/require-role";
 import { createClient } from "@/lib/supabase/server";
 import type { Pipeline, Stage } from "@/lib/kanban/types";
 import { traduzir } from "@/lib/i18n/dicionario";
+import { moedaServidaOu } from "@/lib/money";
 
 export const dynamic = "force-dynamic";
 
@@ -49,8 +50,18 @@ export async function GET(): Promise<Response> {
     .order("position");
   if (stagesErr) return fail("internal_error", stagesErr.message, 500, { requestId });
 
+  // A moeda da org — sem isto, "criar lead daqui" (painel do Inbox) gravava
+  // sempre BRL, mesmo numa instalação em EUR/MXN. Mesma doutrina de
+  // `lib/catalogo/moeda-da-org.ts`: cai no padrão sem derrubar a chamada.
+  const { data: orgRow } = await supabase
+    .from("organizations")
+    .select("currency")
+    .eq("id", org.orgId)
+    .maybeSingle();
+  const currency = moedaServidaOu(orgRow?.currency);
+
   return ok(
-    { pipeline: pipeline as Pipeline, stages: (stages ?? []) as Stage[] },
+    { pipeline: pipeline as Pipeline, stages: (stages ?? []) as Stage[], currency },
     { requestId },
   );
 }

@@ -25,16 +25,25 @@ interface Props {
   ownerNames?: Map<string, string | null>;
 }
 
+/**
+ * ⚠️ Cópia parcial de `formatCents` (lib/money.ts) — mesma dívida declarada
+ * de `components/kanban/KanbanCard.tsx`. Corrige o locale fixo "pt-BR" que
+ * saía errado para moeda dinâmica (ex.: EUR com vírgula brasileira).
+ */
 function formatBRL(cents: number | null, currency: string | null): string {
   if (cents === null) return "—";
+  const code = currency ?? "BRL";
   try {
-    return new Intl.NumberFormat("pt-BR", {
+    const provavel = new Intl.Locale(`und-${code.slice(0, 2)}`).maximize();
+    const tag = `${provavel.language}-${provavel.region}`;
+    const locale = Intl.NumberFormat.supportedLocalesOf(tag).length > 0 ? tag : "en-US";
+    return new Intl.NumberFormat(locale, {
       style: "currency",
-      currency: currency ?? "BRL",
+      currency: code,
       maximumFractionDigits: 0,
     }).format(cents / 100);
   } catch {
-    return `R$ ${(cents / 100).toFixed(0)}`;
+    return `${code} ${(cents / 100).toFixed(0)}`;
   }
 }
 

@@ -1,6 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import { requireAuth, resolveActiveOrg } from "@/lib/auth/server";
 import { createClient } from "@/lib/supabase/server";
+import { moedaServidaOu } from "@/lib/money";
 import { PipelinePageClient } from "./_client";
 
 export const dynamic = "force-dynamic";
@@ -26,5 +27,15 @@ export default async function PipelinePage({
     .eq("id", id)
     .maybeSingle();
   if (!pipeline) notFound();
-  return <PipelinePageClient pipelineId={id} initialName={pipeline.name} />;
+  // A moeda que a organização declarou (`organizations.currency`, migration
+  // 0208) — sem isto, o formulário de novo lead grava tudo em BRL, mesmo numa
+  // instalação em EUR. `moedaServidaOu` cai no padrão se a linha não trouxer
+  // nada válido (mesma doutrina de `lib/catalogo/moeda-da-org.ts`).
+  const { data: org } = await supabase
+    .from("organizations")
+    .select("currency")
+    .eq("id", activeOrg.orgId)
+    .maybeSingle();
+  const currency = moedaServidaOu(org?.currency);
+  return <PipelinePageClient pipelineId={id} initialName={pipeline.name} currency={currency} />;
 }

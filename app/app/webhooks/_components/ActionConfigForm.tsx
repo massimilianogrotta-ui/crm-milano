@@ -306,7 +306,7 @@ function AddTagForm({ config, onChange }: FormProps<{ tags: string[] }>) {
             .filter(Boolean);
           onChange({ tags });
         }}
-        placeholder="boas-vindas, novo-lead"
+        placeholder={t("boas-vindas, novo-lead")}
       />
     </div>
   );

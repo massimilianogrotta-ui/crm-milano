@@ -170,13 +170,13 @@ function ScheduleDialog({
                     )
                   }
                 >
-                  <SelectTrigger className="w-[90px]" aria-label="Dia da semana">
+                  <SelectTrigger className="w-[90px]" aria-label={t("Dia da semana")}>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     {DOW_LABELS.map((d, idx) => (
                       <SelectItem key={idx} value={String(idx)}>
-                        {d}
+                        {t(d)}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -205,7 +205,7 @@ function ScheduleDialog({
                 <Button
                   variant="ghost"
                   size="icon"
-                  aria-label="Remover janela"
+                  aria-label={t("Remover janela")}
                   onClick={() => setWindows((ws) => ws.filter((_, j) => j !== i))}
                 >
                   <Trash size={18} />
@@ -219,17 +219,17 @@ function ScheduleDialog({
                 setWindows((ws) => [...ws, { dow: 1, start: "08:00", end: "18:00" }])
               }
             >
-              <Plus size={16} className="mr-1" /> Adicionar janela
+              <Plus size={16} className="mr-1" /> {t("Adicionar janela")}
             </Button>
           </div>
         </div>
 
         <DialogFooter>
           <Button variant="ghost" onClick={() => onOpenChange(false)}>
-            Cancelar
+            {t("Cancelar")}
           </Button>
           <Button disabled={isPending} onClick={() => onSave(windows, timezone)}>
-            Salvar
+            {t("Salvar")}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -341,7 +341,7 @@ function RoutingCard({ canManage }: { canManage: boolean }) {
               onClick={() => update.mutate(current, { onSuccess: () => setDraft(null) })}
               className="w-full sm:w-auto"
             >
-              Salvar
+              {t("Salvar")}
             </Button>
           </div>
         ) : null}

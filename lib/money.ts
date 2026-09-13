@@ -220,7 +220,7 @@ export function formatCents(cents: number, moeda: string): string {
  * formatador já os cobre —, mas exige olhar `precoParaCentavos`, que ainda
  * multiplica por 100 na leitura do que a pessoa digita.
  */
-export const MOEDAS_SERVIDAS = ["BRL", "MXN", "USD"] as const;
+export const MOEDAS_SERVIDAS = ["BRL", "MXN", "USD", "EUR"] as const;
 export type MoedaServida = (typeof MOEDAS_SERVIDAS)[number];
 
 /** O que o `default` da coluna grava quando ninguém escolheu. */

@@ -94,10 +94,10 @@ export function NewFlowDialog({ open, onOpenChange }: Props) {
               onClick={() => onOpenChange(false)}
               disabled={create.isPending}
             >
-              Cancelar
+              {t("Cancelar")}
             </Button>
             <Button type="submit" disabled={create.isPending || name.trim().length === 0}>
-              {create.isPending ? "Criando…" : "Criar fluxo"}
+              {create.isPending ? t("Criando…") : t("Criar fluxo")}
             </Button>
           </DialogFooter>
         </form>

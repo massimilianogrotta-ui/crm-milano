@@ -138,7 +138,7 @@ export function ContactPickerDialog({
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Buscar por nome ou telefone…"
+            placeholder={t("Buscar por nome ou telefone…")}
             className="pl-8"
             autoFocus
           />
@@ -247,14 +247,14 @@ export function ContactPickerDialog({
               disabled={sending || !resolvedManualPhone}
               onClick={pickManual}
             >
-              Enviar contato
+              {t("Enviar contato")}
             </Button>
           </div>
         )}
 
         <DialogFooter>
           <Button type="button" variant="outline" onClick={() => close(false)} disabled={sending}>
-            Cancelar
+            {t("Cancelar")}
           </Button>
         </DialogFooter>
       </DialogContent>

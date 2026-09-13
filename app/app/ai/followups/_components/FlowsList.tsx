@@ -37,7 +37,7 @@ export function FlowsList({ initialData, canWrite }: Props) {
 
   const newFlowButton = (
     <Button onClick={() => setDialogOpen(true)} className="w-full sm:w-auto">
-      <Plus size={14} aria-hidden className="mr-2" /> Novo fluxo
+      <Plus size={14} aria-hidden className="mr-2" /> {t("Novo fluxo")}
     </Button>
   );
 

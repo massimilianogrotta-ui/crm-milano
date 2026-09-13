@@ -14162,19 +14162,51 @@ set search_path = public, pg_temp
 as $$
 declare
   v_criados integer := 0;
+  v_locale text;
   r record;
 begin
+  select locale into v_locale from public.organizations where id = p_organization_id;
+
   for r in
     select * from (values
-      ('Consulta',    'consulta',    'consulta', 30, 1000::numeric),
-      ('Reunião',     'reuniao',     'reuniao',  30, 2000::numeric),
-      ('Atendimento', 'atendimento', 'outro',    30, 3000::numeric)
-    ) as t(nome, slug, categoria, duracao, posicao)
+      ('consulta',    'consulta',    30, 1000::numeric),
+      ('reuniao',     'reuniao',     30, 2000::numeric),
+      ('atendimento', 'outro',       30, 3000::numeric)
+    ) as t(slug, categoria, duracao, posicao)
   loop
     insert into public.calendar_event_types
       (organization_id, name, slug, category, duration_minutes, position)
     values
-      (p_organization_id, r.nome, r.slug, r.categoria, r.duracao, r.posicao)
+      (
+        p_organization_id,
+        case r.slug
+          when 'consulta' then
+            case coalesce(v_locale, 'pt-BR')
+              when 'es' then 'Consulta'
+              when 'it' then 'Consulenza'
+              when 'en' then 'Consultation'
+              else 'Consulta'
+            end
+          when 'reuniao' then
+            case coalesce(v_locale, 'pt-BR')
+              when 'es' then 'Reunión'
+              when 'it' then 'Riunione'
+              when 'en' then 'Meeting'
+              else 'Reunião'
+            end
+          else
+            case coalesce(v_locale, 'pt-BR')
+              when 'es' then 'Atención'
+              when 'it' then 'Assistenza'
+              when 'en' then 'Service'
+              else 'Atendimento'
+            end
+        end,
+        r.slug,
+        r.categoria,
+        r.duracao,
+        r.posicao
+      )
     on conflict (organization_id, slug) do nothing;
 
     if found then

@@ -12,7 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useEditLead } from "@/hooks/kanban/useUpdateLead";
 import type { Lead } from "@/lib/types/leads";
 import { updateLeadSchema, type UpdateLeadInput } from "@/lib/schemas/leads";
-import { parseReaisToCents } from "@/lib/money";
+import { parseReaisToCents, moedaServidaOu, simboloDaMoeda } from "@/lib/money";
 import { CustomFieldsEditor, type CustomFieldDef } from "@/components/contacts/CustomFieldsEditor";
 import { EcoDoValor } from "./EcoDoValor";
 
@@ -51,6 +51,7 @@ function centsToReais(cents: number | null | undefined): string {
 export function LeadFieldsForm({ lead, pipelineId, fieldDefs = [], onSaved, onCancel }: Props) {
   const t = useT();
   const edit = useEditLead(pipelineId);
+  const currency = moedaServidaOu(lead.currency);
   const [customFields, setCustomFields] = useState<Record<string, unknown>>(lead.custom_fields ?? {});
 
   const form = useForm<FormShape>({
@@ -137,14 +138,14 @@ export function LeadFieldsForm({ lead, pipelineId, fieldDefs = [], onSaved, onCa
 
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-2">
-            <Label htmlFor="valueReais">{t("Valor (R$)")}</Label>
+            <Label htmlFor="valueReais">{t("Valor")} ({simboloDaMoeda(currency)})</Label>
             <Input
               id="valueReais"
               inputMode="decimal"
               placeholder="0,00"
               {...form.register("valueReais")}
             />
-            <EcoDoValor control={form.control} />
+            <EcoDoValor control={form.control} currency={currency} />
             {form.formState.errors.valueReais && (
               <p className="text-xs text-error-fg">
                 {t(form.formState.errors.valueReais.message ?? "")}
