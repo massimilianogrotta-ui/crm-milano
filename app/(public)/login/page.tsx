@@ -8,8 +8,8 @@ import { idiomaDoVisitante, normalizarIdioma } from "@/lib/i18n/idiomas";
 import { traduzir } from "@/lib/i18n/dicionario";
 
 export async function generateMetadata() {
-  const t = (texto: string) =>
-    traduzir(texto, idiomaDoVisitante((await headers()).get("accept-language")));
+  const idioma = idiomaDoVisitante((await headers()).get("accept-language"));
+  const t = (texto: string) => traduzir(texto, idioma);
   return { title: t("Entrar") };
 }
 
