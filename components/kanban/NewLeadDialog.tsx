@@ -144,7 +144,7 @@ export function NewLeadDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Novo Lead</DialogTitle>
+          <DialogTitle>{t("Novo Lead")}</DialogTitle>
           <DialogDescription>
             {t("Crie um lead manualmente neste pipeline.")}
           </DialogDescription>
@@ -154,7 +154,7 @@ export function NewLeadDialog({
             <Label htmlFor="title">{t("Título")}</Label>
             <Input
               id="title"
-              placeholder="Ex: Pedido Maria — combo presente"
+              placeholder={t("Ex: Pedido Maria — combo presente")}
               {...form.register("title", { required: true, minLength: 2 })}
             />
           </div>
@@ -192,7 +192,7 @@ export function NewLeadDialog({
 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
-              <Label htmlFor="valueReais">Valor (R$)</Label>
+              <Label htmlFor="valueReais">{t("Valor (R$)")}</Label>
               <Input
                 id="valueReais"
                 inputMode="decimal"
@@ -232,10 +232,10 @@ export function NewLeadDialog({
               onClick={() => onOpenChange(false)}
               disabled={create.isPending}
             >
-              Cancelar
+              {t("Cancelar")}
             </Button>
             <Button type="submit" disabled={create.isPending || !stageId}>
-              {create.isPending ? "Criando…" : "Criar lead"}
+              {create.isPending ? t("Criando…") : t("Criar lead")}
             </Button>
           </DialogFooter>
         </form>
