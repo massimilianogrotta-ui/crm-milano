@@ -38,6 +38,12 @@ vi.mock("@/lib/supabase/server", () => ({
     auth: { getUser: vi.fn(async () => ({ data: { user: null } })) },
   })),
 }));
+// O layout público resolve o idioma do VISITANTE pelo Accept-Language — outra
+// API de requisição real. O dublê devolve null: sem língua declarada, o
+// resolvedor cai no default da instalação (o que o teste espera medir).
+vi.mock("next/headers", () => ({
+  headers: async () => ({ get: () => null }),
+}));
 
 const MARCA: MarcaDeSaida = {
   nome: "Vendas Turbo",

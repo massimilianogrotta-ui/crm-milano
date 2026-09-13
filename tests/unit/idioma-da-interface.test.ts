@@ -89,7 +89,7 @@ describe("os elos que somem sem barulho", () => {
       /organizations\(display_name, locale\)/,
     );
     expect(servidor, "o idioma da sessão parou de cair na organização").toMatch(
-      /locale \?\? \(await localeDaOrgAtiva\(memberships\)\)/,
+      /locale \?\?\s*\n?\s*support\?\.locale \?\?\s*\n?\s*\(await localeDaOrgAtiva\(memberships\)\)\s*\n?\s*\?\?\s*\n?\s*idiomaDoVisitante/,
     );
     expect(readFileSync("lib/auth/types.ts", "utf8")).toMatch(/idioma: Idioma/);
     // E o provider de idioma é SEPARADO do de autenticação. A primeira versão

@@ -65,8 +65,12 @@ export function TestarClient({ nome, agenteId, versaoId }: Props) {
       // que a tela fez no primeiro percurso real, enquanto a causa verdadeira
       // era outra: a versão não tinha credencial. Mentir sobre a causa manda a
       // pessoa procurar no lugar errado.
+      //
+      // ⚠️ A route responde status "ok" (turno produziu resposta) ou "blocked"
+      // (produziu nada). "completed" NUNCA sai daqui — quem comparasse com
+      // "completed" via erro até num teste perfeito: "o ensaio terminou como ok".
       const d = json.data;
-      if (d?.status && d.status !== "completed") {
+      if (d?.status === "blocked") {
         setDesfecho({
           tipo: "erro",
           mensagem: d.error_message ?? d.error_code ?? `${t("o ensaio terminou como")} "${d.status}"`,

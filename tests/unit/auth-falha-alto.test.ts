@@ -28,6 +28,10 @@ const consultas: { platformAdmins: unknown; memberships: unknown } = {
 // por falta do dublê, não por defeito.
 vi.mock("next/headers", () => ({
   cookies: async () => ({ get: () => undefined, getAll: () => [], set: () => {} }),
+  // `headers` entrou junto com o último elo da cadeia de idioma (Accept-Language
+  // do navegador). O dublê devolve null: nos testes daqui ninguém declara
+  // língua, e o fallback final (`APP_LOCALE`/pt-BR) resolve.
+  headers: async () => ({ get: () => null }),
 }));
 vi.mock("next/navigation", () => ({ redirect: () => { throw new Error("redirect"); } }));
 
