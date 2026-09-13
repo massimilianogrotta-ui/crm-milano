@@ -37,6 +37,42 @@ import type { Idioma } from "./idiomas";
 type Traducoes = Record<string, Partial<Record<Exclude<Idioma, "pt-BR">, string>>>;
 
 export const DICIONARIO: Traducoes = {
+  "Atender e responder": { es: "Atender y responder", it: "Assistere e rispondere", en: "Assist and respond" },
+  "O agente lê a conversa, entende o histórico e responde ao cliente sem pedir que ele repita o que já disse.": {
+    es: "El agente lee la conversación, entiende el historial y responde al cliente sin pedirle que repita lo que ya dijo.",
+    it: "L'agente legge la conversazione, capisce lo storico e risponde al cliente senza chiedergli di ripetere ciò che ha già detto.",
+    en: "The agent reads the conversation, understands the history, and replies to the customer without asking them to repeat what they already said.",
+  },
+  "Vender e mover o funil": { es: "Vender y mover el funnel", it: "Vendere e muovere il funnel", en: "Sell and move the funnel" },
+  "O agente registra a oportunidade, atualiza o negócio e move o cliente de etapa conforme a conversa avança.": {
+    es: "El agente registra la oportunidad, actualiza el negocio y mueve al cliente de etapa a medida que avanza la conversación.",
+    it: "L'agente registra l'opportunità, aggiorna la trattativa e sposta il cliente di fase man mano che la conversazione avanza.",
+    en: "The agent logs the opportunity, updates the deal, and moves the customer through stages as the conversation progresses.",
+  },
+  "Não perder o cliente": { es: "No perder al cliente", it: "Non perdere il cliente", en: "Don't lose the customer" },
+  "O agente agenda retornos e acompanha quem esfriou, para que nenhum interessado morra por falta de resposta.": {
+    es: "El agente agenda retornos y da seguimiento a quien se enfrió, para que ningún interesado se pierda por falta de respuesta.",
+    it: "L'agente pianifica i richiami e segue chi si è raffreddato, così nessun interessato si perde per mancanza di risposta.",
+    en: "The agent schedules follow-ups and tracks cooling leads, so no prospect is lost for lack of a response.",
+  },
+  "Passar para um humano": { es: "Pasar a un humano", it: "Passare a un umano", en: "Hand off to a human" },
+  "O agente reconhece quando não é o caso dele resolver, chama uma pessoa e entrega o resumo do que já aconteceu.": {
+    es: "El agente reconoce cuándo no le corresponde resolverlo, llama a una persona y entrega el resumen de lo que ya pasó.",
+    it: "L'agente riconosce quando non tocca a lui risolvere, chiama una persona e consegna il riepilogo di ciò che è già successo.",
+    en: "The agent recognizes when it's not its place to resolve something, calls in a person, and hands over a summary of what already happened.",
+  },
+  "Organizar a operação": { es: "Organizar la operación", it: "Organizzare l'operazione", en: "Organize the operation" },
+  "O agente mantém a casa em ordem: marcadores, etapas do funil, avisos automáticos e distribuição de trabalho.": {
+    es: "El agente mantiene la casa en orden: etiquetas, etapas del funnel, avisos automáticos y distribución del trabajo.",
+    it: "L'agente tiene tutto in ordine: etichette, fasi del funnel, avvisi automatici e distribuzione del lavoro.",
+    en: "The agent keeps things in order: tags, funnel stages, automatic alerts, and work distribution.",
+  },
+  "Aprender e evoluir": { es: "Aprender y evolucionar", it: "Imparare ed evolvere", en: "Learn and evolve" },
+  "O agente consulta o que a empresa já sabe, aprende com os atendimentos e sugere melhorias para você aprovar.": {
+    es: "El agente consulta lo que la empresa ya sabe, aprende con las atenciones y sugiere mejoras para que tú apruebes.",
+    it: "L'agente consulta ciò che l'azienda già sa, impara dalle conversazioni gestite e propone miglioramenti da approvare.",
+    en: "The agent consults what the company already knows, learns from past conversations, and suggests improvements for you to approve.",
+  },
   "números de teste autorizados": { es: "números de prueba autorizados" , it: "numeri di test autorizzati", en: "authorized test numbers"},
   "1 número de teste autorizado": { es: "1 número de prueba autorizado" , it: "1 numero di test autorizzato", en: "1 authorized test number"},
   "Nenhum número autorizado — a IA não responde ninguém neste canal.": {
