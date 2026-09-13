@@ -22,12 +22,27 @@ interface Props {
   initial: TenantInput;
 }
 
+/**
+ * Fusi orari del selettore. La lista upstream era solo Brasile: per le
+ * installazioni fuori dal BR serve l'Europa. ID IANA — nessuna derivazione
+ * dal browser (chi viaggia mantiene il fuso della propria operazione).
+ */
 const TIMEZONES = [
+  "Europe/Rome",
+  "Europe/London",
+  "Europe/Madrid",
+  "Europe/Lisbon",
+  "Europe/Paris",
+  "Europe/Berlin",
+  "Europe/Amsterdam",
+  "Europe/Zurich",
   "America/Sao_Paulo",
-  "America/Manaus",
-  "America/Belem",
-  "America/Recife",
-  "America/Fortaleza",
+  "America/New_York",
+  "America/Los_Angeles",
+  "America/Argentina/Buenos_Aires",
+  "America/Mexico_City",
+  "America/Bogota",
+  "America/Lima",
   "UTC",
 ];
 

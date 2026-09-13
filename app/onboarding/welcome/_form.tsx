@@ -21,16 +21,22 @@ import {
  * "America/Fortaleza" e esperava que a pessoa soubesse em qual delas mora — o
  * identificador é do sistema, o que ela reconhece é a cidade.
  */
+/**
+ * Città, non identificatore di fuso. Lista internazionale (il default upstream
+ * era solo Brasile): l'Europa prima — All-io opera in Italia — poi Americas.
+ */
 const FUSOS: { id: string; cidade: string }[] = [
+  { id: "Europe/Rome", cidade: "Roma, Milano, Italia" },
+  { id: "Europe/London", cidade: "Londra" },
+  { id: "Europe/Madrid", cidade: "Madrid" },
+  { id: "Europe/Lisbon", cidade: "Lisbona" },
+  { id: "Europe/Paris", cidade: "Parigi" },
+  { id: "Europe/Berlin", cidade: "Berlino" },
   { id: "America/Sao_Paulo", cidade: "São Paulo, Rio, Brasília, Sul e Sudeste" },
   { id: "America/Recife", cidade: "Recife, Salvador, Fortaleza e Nordeste" },
   { id: "America/Belem", cidade: "Belém e Pará" },
   { id: "America/Manaus", cidade: "Manaus e Amazonas" },
-  { id: "America/Cuiaba", cidade: "Cuiabá e Mato Grosso" },
-  { id: "America/Rio_Branco", cidade: "Rio Branco e Acre" },
   { id: "America/Argentina/Buenos_Aires", cidade: "Buenos Aires" },
-  { id: "Europe/Lisbon", cidade: "Lisboa" },
-  { id: "Europe/Madrid", cidade: "Madri" },
   { id: "America/New_York", cidade: "Nova York" },
   { id: "America/Los_Angeles", cidade: "Los Angeles" },
   { id: "UTC", cidade: "Outro (horário universal)" },

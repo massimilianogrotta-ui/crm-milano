@@ -21,12 +21,28 @@ import {
   type Locale,
 } from "@/lib/schemas/settings";
 
+/**
+ * Fusi orari del selettore. La lista upstream era solo Brasile (il prodotto
+ * nasce lì): per le installazioni fuori dal BR serve l'Europa e l'orario
+ * universale. La scelta resta un ID IANA — il form non deriva niente dal
+ * browser: chi viaggia mantiene il fuso della propria operazione.
+ */
 const TIMEZONES = [
+  "Europe/Rome",
+  "Europe/London",
+  "Europe/Madrid",
+  "Europe/Lisbon",
+  "Europe/Paris",
+  "Europe/Berlin",
+  "Europe/Amsterdam",
+  "Europe/Zurich",
   "America/Sao_Paulo",
-  "America/Manaus",
-  "America/Belem",
-  "America/Recife",
-  "America/Fortaleza",
+  "America/New_York",
+  "America/Los_Angeles",
+  "America/Argentina/Buenos_Aires",
+  "America/Mexico_City",
+  "America/Bogota",
+  "America/Lima",
   "UTC",
 ];
 
