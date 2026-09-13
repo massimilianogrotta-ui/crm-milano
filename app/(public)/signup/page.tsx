@@ -8,7 +8,11 @@ import { createClient } from "@/lib/supabase/server";
 import { idiomaDoVisitante, normalizarIdioma } from "@/lib/i18n/idiomas";
 import { traduzir } from "@/lib/i18n/dicionario";
 
-export const metadata = { title: "Criar conta" };
+export async function generateMetadata() {
+  const t = (texto: string) =>
+    traduzir(texto, idiomaDoVisitante((await headers()).get("accept-language")));
+  return { title: t("Criar conta") };
+}
 
 /**
  * Aceita `?invite=<token>`: é o caminho de quem foi convidado e ainda não tem

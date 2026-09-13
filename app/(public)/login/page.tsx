@@ -7,7 +7,11 @@ import { createClient } from "@/lib/supabase/server";
 import { idiomaDoVisitante, normalizarIdioma } from "@/lib/i18n/idiomas";
 import { traduzir } from "@/lib/i18n/dicionario";
 
-export const metadata = { title: "Entrar" };
+export async function generateMetadata() {
+  const t = (texto: string) =>
+    traduzir(texto, idiomaDoVisitante((await headers()).get("accept-language")));
+  return { title: t("Entrar") };
+}
 
 export default async function LoginPage({
   searchParams,
