@@ -17,7 +17,12 @@
  * v2 (2026-09-12): paese d'origine (lookup ip-api.com sul remote_ip del CRM,
  * passato nel payload di ingresso come campo opzionale `remote_ip`) + azione
  * suggerita inline (inline keyboard) con link diretto alla scheda lead.
+ *
+ * eslint: questo file è Node puro (CommonJS, fuori dal bundle Next). Il lint
+ * del repo è configurato per TypeScript/ESM; gli import require() sono
+ * intenzionali. Ignorato selettivamente qui sotto, non altrove.
  */
+/* eslint-disable @typescript-eslint/no-require-imports */
 const http = require("http");
 const https = require("https");
 

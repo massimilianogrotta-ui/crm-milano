@@ -1,0 +1,103 @@
+# Stack per-istanza CRM (app + waha + redis/srh + scheduler) SENZA caddy:
+# il TLS lo fa il Caddy DI SISTEMA dell'host (stesso schema di brain./circuito.),
+# quindi qui NESSUN servizio pubblica porte TCP — solo l'UDP di wacalls.
+#
+#   docker compose --env-file .env up -d
+#
+# L'app ascolta SOLO su 127.0.0.1:<porta> (mappata qui sotto per Caddy).
+
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+services:
+  app:
+    image: crm-app:latest   # immagine buildata dal fork (ha widget + public-paths)
+    pull_policy: never
+    restart: unless-stopped
+    env_file: .env
+    depends_on:
+      srh: { condition: service_started }
+      waha: { condition: service_started }
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('net').connect(3000,'127.0.0.1').on('connect',()=>process.exit(0)).on('error',()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+    ports:
+      - "127.0.0.1:${APP_PORT:-3101}:3000"
+    mem_limit: 768m
+    logging: *default-logging
+    networks: [internal]
+
+  worker:
+    image: ghcr.io/melgarafael/deskcomm-worker:stable
+    pull_policy: always
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      WAHA_API_BASE_URL: http://waha:3000
+    mem_limit: 512m
+    logging: *default-logging
+    networks: [internal]
+
+  waha:
+    image: devlikeapro/waha:latest-2026.7.2
+    restart: unless-stopped
+    environment:
+      WAHA_API_KEY: "sha512:${WAHA_API_KEY_SHA512}"
+      WHATSAPP_HOOK_URL: ${WAHA_WEBHOOK_BASE_URL}/api/v1/webhooks/waha
+      WHATSAPP_HOOK_EVENTS: message, session.status
+      WAHA_WORKER_REDIS_URL: redis://srh:8080
+      WAHA_MEDIA_STORAGE: LOCAL
+    volumes:
+      - waha-data:/app/.waha
+    mem_limit: 1280m
+    logging: *default-logging
+    networks: [internal]
+
+  wacalls:
+    image: ghcr.io/melgarafael/deskcomm-worker:stable
+    pull_policy: always
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      WAHA_API_BASE_URL: http://waha:3000
+      WACALLS_WEBRTC_UDP_PORT: ${WACALLS_WEBRTC_UDP_PORT:-7881}
+    ports:
+      - "${WACALLS_WEBRTC_UDP_PORT:-7881}:${WACALLS_WEBRTC_UDP_PORT:-7881}/udp"
+    volumes:
+      - wacalls-data:/data
+    mem_limit: 512m
+    logging: *default-logging
+    networks: [internal]
+
+  srh:
+    image: hiett/serverless-redis-http@sha256:5b0bb9239fce53abf87b2018a7a0deb9ec7bd900c5360738fe5fbeeb426f9150
+    restart: unless-stopped
+    environment:
+      SRH_MODE: env
+      SRH_TOKEN: ${SRH_TOKEN}
+    mem_limit: 256m
+    logging: *default-logging
+    networks: [internal]
+
+  scheduler:
+    image: ghcr.io/melgarafael/deskcomm-scheduler:stable
+    pull_policy: always
+    restart: unless-stopped
+    env_file: .env
+    mem_limit: 256m
+    logging: *default-logging
+    networks: [internal]
+
+volumes:
+  waha-data:
+  wacalls-data:
+
+networks:
+  internal:
+    driver: bridge

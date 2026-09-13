@@ -1,0 +1,19 @@
+# === CRM All-io (intake) ===
+crm.all-io.com {
+    encode zstd gzip
+    reverse_proxy 127.0.0.1:3101
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains"
+        X-Content-Type-Options "nosniff"
+    }
+}
+
+# === CRM Radio Banana (consegna) ===
+crm.radio-banana.com {
+    encode zstd gzip
+    reverse_proxy 127.0.0.1:3102
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains"
+        X-Content-Type-Options "nosniff"
+    }
+}
