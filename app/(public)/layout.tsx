@@ -3,6 +3,8 @@ import { marcaEhADoProduto } from "@/lib/branding";
 import { marcaDaSaida } from "@/lib/branding/saida";
 import { createClient } from "@/lib/supabase/server";
 import { IdiomaProvider } from "@/lib/i18n/IdiomaProvider";
+import { idiomaDoVisitante } from "@/lib/i18n/idiomas";
+import { headers } from "next/headers";
 
 /**
  * A casca das telas de acesso — login, cadastro, recuperação, MFA.
@@ -41,13 +43,16 @@ export default async function PublicLayout({ children }: { children: React.React
   // A maioria destas telas roda ANTES do login (não há usuário nenhum), mas
   // duas — `/login/mfa` e, em parte, `/login/recovery` — rodam com uma sessão
   // parcial já criada (primeiro fator verificado, segundo pendente). Onde há
-  // sessão, o idioma salvo no perfil vale; sem ela, `IdiomaProvider` já cai no
-  // padrão pt-BR sozinho (ver o cabeçalho do provider) — nunca lança.
+  // sessão, o idioma salvo no perfil vale; sem ela, o VISITANTE fala a língua
+  // do próprio navegador (Accept-Language) e o default da instalação
+  // (`APP_LOCALE`) é só o fallback final — nunca lança.
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  const locale = (user?.user_metadata?.locale as string | undefined) ?? null;
+  const locale = user
+    ? ((user.user_metadata?.locale as string | undefined) ?? null)
+    : idiomaDoVisitante((await headers()).get("accept-language"));
 
   return (
     <IdiomaProvider locale={locale}>
