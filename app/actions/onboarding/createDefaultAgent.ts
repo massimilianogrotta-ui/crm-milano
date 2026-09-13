@@ -12,6 +12,7 @@ import { audit } from "@/lib/audit";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { aiAgentDefaultSchema, type PromptTemplate } from "@/lib/schemas/onboarding";
 import { publicarMemoriaDaOrg } from "@/lib/ai/memoria-da-org";
+import type { Idioma } from "@/lib/i18n/idiomas";
 import {
   requireOnboardingCtx,
   patchOnboardingState,
@@ -37,13 +38,47 @@ function ondeTrabalha(negocio: string, oQueFaz: string | undefined): string {
   return oQueFaz ? `${negocio}, que é: ${oQueFaz}` : negocio;
 }
 
-const PROMPT_BODIES: Record<PromptTemplate, (onde: string) => string> = {
-  ecommerce_friendly: (n) =>
-    `Você atende os clientes de ${n}. Fale de forma calorosa e próxima, como alguém que gosta de ajudar. Cumprimente, entenda o que a pessoa precisa e ofereça opções claras. Confirme os detalhes antes de agir.`,
-  ecommerce_professional: (n) =>
-    `Você atende os clientes de ${n}. Fale de forma objetiva, cordial e profissional. Vá direto ao ponto, sem parecer frio, e sempre termine indicando o próximo passo.`,
-  support_minimal: (n) =>
-    `Você atende os clientes de ${n}. Responda em frases curtas, peça apenas o que for necessário e chame uma pessoa do time assim que a dúvida sair do seu alcance.`,
+/**
+ * O prompt saía SEMPRE em pt-BR, mesmo quando a organização (e a interface
+ * inteira) já resolvia para outro idioma — o funcionário falava a língua de
+ * quem escreveu o código, não a de quem o contratou. `oQueFaz` (texto livre
+ * escrito pelo dono no passo 1) é colado dentro do corpo tal como veio: se o
+ * dono escreveu em italiano e o corpo era português, a mistura saía no
+ * primeiro turno real. Corrigido pedindo ao modelo, já no idioma certo, que
+ * ele responda no idioma do CLIENTE que escrever — cobre o caso comum
+ * (org e clientes na mesma língua) sem travar quem atende em várias.
+ */
+const PROMPT_BODIES: Record<PromptTemplate, Record<Idioma, (onde: string) => string>> = {
+  ecommerce_friendly: {
+    "pt-BR": (n) =>
+      `Você atende os clientes de ${n}. Fale de forma calorosa e próxima, como alguém que gosta de ajudar. Cumprimente, entenda o que a pessoa precisa e ofereça opções claras. Confirme os detalhes antes de agir. Responda sempre no mesmo idioma em que o cliente escrever.`,
+    es: (n) =>
+      `Atiendes a los clientes de ${n}. Habla de forma cálida y cercana, como alguien a quien le gusta ayudar. Saluda, entiende lo que la persona necesita y ofrece opciones claras. Confirma los detalles antes de actuar. Responde siempre en el mismo idioma en que escriba el cliente.`,
+    it: (n) =>
+      `Assisti i clienti di ${n}. Parla in modo caloroso e vicino, come qualcuno a cui piace aiutare. Saluta, capisci ciò di cui la persona ha bisogno e offri opzioni chiare. Conferma i dettagli prima di agire. Rispondi sempre nella stessa lingua in cui scrive il cliente.`,
+    en: (n) =>
+      `You assist ${n}'s customers. Speak warmly and approachably, like someone who enjoys helping. Greet, understand what the person needs, and offer clear options. Confirm details before acting. Always reply in the same language the customer writes in.`,
+  },
+  ecommerce_professional: {
+    "pt-BR": (n) =>
+      `Você atende os clientes de ${n}. Fale de forma objetiva, cordial e profissional. Vá direto ao ponto, sem parecer frio, e sempre termine indicando o próximo passo. Responda sempre no mesmo idioma em que o cliente escrever.`,
+    es: (n) =>
+      `Atiendes a los clientes de ${n}. Habla de forma objetiva, cordial y profesional. Ve directo al punto sin parecer frío, y termina siempre indicando el próximo paso. Responde siempre en el mismo idioma en que escriba el cliente.`,
+    it: (n) =>
+      `Assisti i clienti di ${n}. Parla in modo diretto, cordiale e professionale. Vai dritto al punto senza sembrare freddo, e termina sempre indicando il prossimo passo. Rispondi sempre nella stessa lingua in cui scrive il cliente.`,
+    en: (n) =>
+      `You assist ${n}'s customers. Speak objectively, courteously and professionally. Get to the point without sounding cold, and always end by indicating the next step. Always reply in the same language the customer writes in.`,
+  },
+  support_minimal: {
+    "pt-BR": (n) =>
+      `Você atende os clientes de ${n}. Responda em frases curtas, peça apenas o que for necessário e chame uma pessoa do time assim que a dúvida sair do seu alcance. Responda sempre no mesmo idioma em que o cliente escrever.`,
+    es: (n) =>
+      `Atiendes a los clientes de ${n}. Responde en frases cortas, pide solo lo necesario y llama a alguien del equipo en cuanto la duda supere tu alcance. Responde siempre en el mismo idioma en que escriba el cliente.`,
+    it: (n) =>
+      `Assisti i clienti di ${n}. Rispondi con frasi brevi, chiedi solo ciò che serve e coinvolgi qualcuno del team non appena la richiesta supera le tue competenze. Rispondi sempre nella stessa lingua in cui scrive il cliente.`,
+    en: (n) =>
+      `You assist ${n}'s customers. Reply in short sentences, ask only for what's necessary, and bring in a teammate as soon as the question is beyond your scope. Always reply in the same language the customer writes in.`,
+  },
 };
 
 /** O agente padrão desta organização, do jeito que este passo precisa vê-lo. */
@@ -135,7 +170,9 @@ export async function createDefaultAgent(formData: FormData): Promise<CreateAgen
     oQueFaz = undefined;
   }
 
-  const systemPrompt = PROMPT_BODIES[input.prompt_template](ondeTrabalha(ctx.orgName, oQueFaz));
+  const systemPrompt = PROMPT_BODIES[input.prompt_template][ctx.idioma ?? "pt-BR"](
+    ondeTrabalha(ctx.orgName, oQueFaz),
+  );
 
   // O agente padrão do onboarding é UM por organização, e o banco já garante
   // isso: `ai_agents_one_default_per_org` é índice único parcial em

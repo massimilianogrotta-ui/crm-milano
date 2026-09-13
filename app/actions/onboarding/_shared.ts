@@ -31,6 +31,12 @@ export interface OnboardingCtx {
   role: string;
   fullName: string | null;
   email: string;
+  /** O idioma JÁ resolvido da sessão (pessoa → organização → padrão da
+   * instalação) — o mesmo que a interface usa. Quem gera texto para o
+   * funcionário (prompt padrão, mensagens de boas-vindas) usa ESTE valor, não
+   * um idioma fixo, senão o funcionário nasce falando a língua de quem
+   * escreveu o código, não a da organização que o contratou. */
+  idioma: import("@/lib/i18n/idiomas").Idioma;
 }
 
 export async function requireOnboardingCtx(): Promise<OnboardingCtx> {
@@ -46,6 +52,7 @@ export async function requireOnboardingCtx(): Promise<OnboardingCtx> {
     role: activeOrg.role,
     fullName: user.full_name,
     email: user.email,
+    idioma: user.idioma,
   };
 }
 
