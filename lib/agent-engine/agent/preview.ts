@@ -235,7 +235,16 @@ export function scenarioContext(
     context: {
       lead_id: '',
       contact: {
-        name: contact?.name ?? 'Teste',
+        // Placeholder quando o operador não preenche nome no teste — mesma
+        // razão de existir do "Maria" no placeholder do campo: alguém que só
+        // lê o texto (não o `name=` do input) precisa reconhecer que é um
+        // nome de exemplo, e "Teste" sozinho (sem tradução) vazava para o
+        // agente responder em português mesmo com toda a config em outro
+        // idioma — o próprio nome do contato virava a única palavra
+        // portuguesa na tela. "Cliente" funciona nos 4 idiomas do produto
+        // (pt-BR/es/it/en) sem tradução — trocar por texto traduzido aqui
+        // reabriria o mesmo problema para quem instala em outro idioma.
+        name: contact?.name ?? 'Cliente',
         phone: contact?.phone ?? null,
         email: null,
         tags: [],
