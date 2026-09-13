@@ -34,7 +34,7 @@ services:
     networks: [internal]
 
   worker:
-    image: ghcr.io/melgarafael/deskcomm-worker:stable
+    image: ghcr.io/massimilianogrotta-ui/deskcomm-worker:latest
     pull_policy: always
     restart: unless-stopped
     env_file: .env
@@ -50,7 +50,7 @@ services:
     environment:
       WAHA_API_KEY: "sha512:${WAHA_API_KEY_SHA512}"
       WHATSAPP_HOOK_URL: ${WAHA_WEBHOOK_BASE_URL}/api/v1/webhooks/waha
-      WHATSAPP_HOOK_EVENTS: message, session.status
+      WHATSAPP_HOOK_EVENTS: 'message,session.status'
       WAHA_WORKER_REDIS_URL: redis://srh:8080
       WAHA_MEDIA_STORAGE: LOCAL
     volumes:
@@ -60,7 +60,7 @@ services:
     networks: [internal]
 
   wacalls:
-    image: ghcr.io/melgarafael/deskcomm-worker:stable
+    image: ghcr.io/massimilianogrotta-ui/deskcomm-worker:latest
     pull_policy: always
     restart: unless-stopped
     env_file: .env
@@ -86,7 +86,7 @@ services:
     networks: [internal]
 
   scheduler:
-    image: ghcr.io/melgarafael/deskcomm-scheduler:stable
+    image: ghcr.io/massimilianogrotta-ui/deskcomm-scheduler:latest
     pull_policy: always
     restart: unless-stopped
     env_file: .env

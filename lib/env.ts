@@ -350,6 +350,21 @@ const schema = z.object({
   APP_ACCENT_HEX: z.string().optional().default(""),
 
   /**
+   * Idioma PADRÃO da instalação (`pt-BR` | `es` | `it` | `en`) — ver
+   * `lib/i18n/idiomas.ts`. É o default quando o visitante não declara
+   * preferência (Accept-Language ausente, tela de login/signup sem sessão).
+   * Opcional e vazio por padrão: instalações que não falam de idioma caem no
+   * comportamento histórico (`pt-BR`), nada quebra.
+   */
+  APP_LOCALE: z
+    .string()
+    .optional()
+    .default("")
+    .refine((v) => v === "" || ["pt-BR", "es", "it", "en"].includes(v), {
+      message: "APP_LOCALE deve ser pt-BR, es, it ou en (ou vazio)",
+    }),
+
+  /**
    * Par VAPID do Web Push. Opcionais: sem elas a bandeja só funciona com a aba
    * viva (Notification API + SW local). Gerar: `npx web-push generate-vapid-keys`.
    */
