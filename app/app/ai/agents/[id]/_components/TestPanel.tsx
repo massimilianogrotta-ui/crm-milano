@@ -174,6 +174,14 @@ export function TestPanel({ agent, draft, published, readOnly }: Props) {
       const res = await apiClient.post<TestResponse>(
         `/api/v1/ai/agents/${agent.id}/versions/${target.id}/test`,
         body,
+        // Default (10s) é curto de mais aqui: o turno faz 4-6 chamadas de LLM
+        // em série (classificador, jailbreak, resposta, checkpoint) e passa
+        // regularmente de 20-30s. Sem isto o cliente ABANDONAVA a chamada,
+        // TENTAVA DE NOVO (o client re-tenta timeout como erro de rede) — o
+        // resultado real do 1º turno chegava depois do timeout do 3º, cada
+        // um gastando crédito de verdade, e a tela terminava em "nenhum
+        // teste executado" mesmo com 3 respostas geradas no servidor.
+        { timeoutMs: 90_000 },
       );
       setResult(res.data);
       qc.invalidateQueries({ queryKey: agentRunsKey(agent.id) });
