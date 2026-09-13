@@ -53,6 +53,10 @@ services:
       WHATSAPP_HOOK_EVENTS: 'message,session.status'
       WAHA_WORKER_REDIS_URL: redis://srh:8080
       WAHA_MEDIA_STORAGE: LOCAL
+      # Vedi commento gemello in tools/deploy/crm-allio/docker-compose.yml:
+      # lib/waha/client.ts richiede engine NOWEB; senza questa var l'immagine
+      # sale col suo default (WEBJS) e ogni operazione fallisce per mismatch.
+      WHATSAPP_DEFAULT_ENGINE: NOWEB
     volumes:
       - waha-data:/app/.waha
     mem_limit: 1280m

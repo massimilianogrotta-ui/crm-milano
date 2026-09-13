@@ -53,6 +53,11 @@ services:
       WHATSAPP_HOOK_EVENTS: 'message,session.status'
       WAHA_WORKER_REDIS_URL: redis://srh:8080
       WAHA_MEDIA_STORAGE: LOCAL
+      # O código do CRM (lib/waha/client.ts) só aceita sessão com engine NOWEB
+      # (createSession/startSession rejeitam WEBJS como incompatível). Sem esta
+      # var a imagem sobe no default dela própria (WEBJS) — a sessão nasce,
+      # mas toda operação subsequente falha comparando engines.
+      WHATSAPP_DEFAULT_ENGINE: NOWEB
     volumes:
       - waha-data:/app/.waha
     mem_limit: 1280m
