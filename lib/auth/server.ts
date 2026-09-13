@@ -14,7 +14,8 @@ import { logger } from "@/lib/logger";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { empresaExigeMfa, exigeCadastroDeMfa } from "@/lib/auth/politica-mfa";
-import { normalizarIdioma } from "@/lib/i18n/idiomas";
+import { normalizarIdioma, idiomaDoVisitante } from "@/lib/i18n/idiomas";
+import { headers } from "next/headers";
 import type { AuthUser, Role, UserOrgMembership, ActiveOrg } from "./types";
 
 const ACTIVE_ORG_COOKIE = "active_org";
@@ -242,8 +243,16 @@ export async function loadAuthUser(): Promise<AuthUser | null> {
   // própria, e quem não pertence a organização nenhuma, não têm o que resolver.
   // Ler assim mesmo faria toda tela do produto tocar o cookie para descartar o
   // valor em seguida.
+  //
+  // Último elo NOVO: ninguém com preferência declarada (pessoa nem org) cai no
+  // idioma do NAVEGADOR e só então no default da instalação (`APP_LOCALE`).
+  // Antes, esse visitante via o produto em pt-BR — o default de quem fez o
+  // produto, não de quem o usa.
   const idioma = normalizarIdioma(
-    locale ?? support?.locale ?? (await localeDaOrgAtiva(memberships)),
+    locale ??
+      support?.locale ??
+      (await localeDaOrgAtiva(memberships)) ??
+      idiomaDoVisitante((await headers()).get("accept-language")),
   );
   const timezone = (user.user_metadata?.timezone as string | undefined) ?? null;
 
