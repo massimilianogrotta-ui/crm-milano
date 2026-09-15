@@ -14,6 +14,11 @@
   //
   // A cobertura de tipos NÃO cai: é este arquivo que o `pnpm typecheck` usa,
   // e ele reinclui o que o outro exclui.
+  //
+  // `supabase/**` fora: as Edge Functions são código DENO (imports https://),
+  // não pertencem ao toolchain do app. Desde o RB-006
+  // (supabase/functions/radio-banana-setup/index.ts) o tsc do Node quebra
+  // sobre elas (TS2307) e o build da imagem Docker falhava inteira.
   "extends": "./tsconfig.json",
   "include": [
     "next-env.d.ts",
@@ -24,5 +29,5 @@
     "tests/**/*.ts",
     "tests/**/*.tsx"
   ],
-  "exclude": ["node_modules", ".next", "dist", "scripts/**"]
+  "exclude": ["node_modules", ".next", "dist", "scripts/**", "supabase/**"]
 }
