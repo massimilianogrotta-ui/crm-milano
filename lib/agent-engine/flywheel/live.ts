@@ -9,6 +9,7 @@ import type pg from 'pg';
 import { runModelCall, type LlmEdgeConfig } from '../edge/llm/run-model-call';
 import type { Logger } from '../obs/logger';
 import { aggregateFollowupOutcomes, type FlowOutcomeStat } from '../../followup/outcome-stats';
+import { IDIOMAS, idiomaDaInstalacao, type Idioma } from '../../i18n/idiomas';
 
 // Os dois pontos do flywheel NÃO fixam modelo aqui. Fixavam `claude-haiku-4-5`,
 // e um id de modelo só é válido no vocabulário do provedor que a instalação usa:
@@ -100,12 +101,43 @@ function judgePrompt(m: TraceMaterial, optionOrder: 'yes_first' | 'no_first'): s
   ].join('\n');
 }
 
-function distillerPrompt(missingFacts: string[]): string {
+/**
+ * Em que língua nasce um aprendizado novo?
+ *
+ * O distiller pedia o bullet "em pt-BR" e o texto da proposta saía na língua de
+ * quem escreveu o código — em All-io (APP_LOCALE=it) a tela "Propostas" mostrava
+ * regras em português dentro de uma interface italiana. Mesma classe do defeito
+ * do prompt do onboarding (createDefaultAgent.ts): conteúdo gerado para o dono
+ * deve seguir o idioma da ORGANIZAÇÃO, não o do repositório. O fallback é o
+ * default da instalação (APP_LOCALE), não pt-BR cravado.
+ */
+const IDIOMA_DO_BULLET: Record<Idioma, string> = {
+  "pt-BR": "em português do Brasil",
+  es: "em espanhol",
+  it: "em italiano",
+  en: "em inglês",
+};
+
+function idiomaDaOrg(pool: pg.Pool, organizationId: string): Promise<Idioma> {
+  return (async () => {
+    const { rows } = await pool.query<{ locale: string | null }>(
+      `select locale from organizations where id = $1`,
+      [organizationId],
+    );
+    const bruto = rows[0]?.locale;
+    return (IDIOMAS as readonly string[]).includes(bruto ?? "")
+      ? (bruto as Idioma)
+      : idiomaDaInstalacao();
+  })();
+}
+
+function distillerPrompt(missingFacts: string[], idioma: Idioma): string {
+  const lingua = IDIOMA_DO_BULLET[idioma];
   return [
     'Você melhora PLAYBOOKS de agentes SDR por DELTAS mínimos. Um juiz constatou falha de higiene de',
     `memória em conversa real: fatos duráveis fora das notas do lead (${missingFacts.join('; ')}).`,
     'Causa raiz típica: o agente consolida notas com "supersedes" apagando fatos de OUTRO assunto.',
-    'Proponha UM único bullet de playbook, em pt-BR, imperativo, ≤3 linhas, que previna essa classe',
+    `Proponha UM único bullet de playbook, ${lingua}, imperativo, ≤3 linhas, que previna essa classe`,
     'de falha sem proibir consolidação legítima. NÃO cite dados do lead.',
     'Decida também o ESCOPO do aprendizado: "org" quando vale para TODO atendimento da organização',
     '(política, tom de voz, fato do negócio — ex.: "a loja não vende aos domingos"); "agent" quando é',
@@ -187,6 +219,7 @@ export async function runFlywheelOnce(
     log.info('flywheel: veredito gravado', { job_id: turn.job_id, verdict: verdictValue, inserted });
 
     if (verdictValue === 'no' && inserted) {
+      const idioma = await idiomaDaOrg(pool, turn.organization_id);
       const distilled = await runModelCall(
         pool,
         llmCfg,
@@ -195,7 +228,7 @@ export async function runFlywheelOnce(
           leadId: turn.contact_id,
           jobId: turn.job_id,
           purpose: 'flywheel_distiller',
-          messages: [{ role: 'user', content: distillerPrompt(verdict.missing_facts ?? []) }],
+          messages: [{ role: 'user', content: distillerPrompt(verdict.missing_facts ?? [], idioma) }],
         },
         { log },
       );

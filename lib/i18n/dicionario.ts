@@ -638,6 +638,91 @@ export const DICIONARIO: Traducoes = {
     en: "How the business did in the period — and the history for when someone asks why."
   },
 
+  // ─── Hub da IA (NavHub: seções, rótulos e descrições das cards) ───
+  //
+  // Último hub a receber `locale` na página (/app/ai): as três seções são a
+  // jornada de quem opera um agente — montar, ensinar, acompanhar.
+  "Montar o agente": { es: "Configurar el agente", it: "Configurare l'agente", en: "Set up the agent"},
+  "Ensinar o agente": { es: "Enseñar al agente", it: "Istruire l'agente", en: "Teach the agent"},
+  "Acompanhar o agente": { es: "Acompañar al agente", it: "Seguire l'agente", en: "Monitor the agent"},
+  "Tudo que define quem atende por você — e como acompanhar o que ele faz.": {
+    es: "Todo lo que define quién atiende por ti — y cómo acompañar lo que hace.",
+    it: "Tutto ciò che definisce chi risponde per te — e come seguire quello che fa.",
+    en: "Everything that defines who answers for you — and how to follow what it does."
+  },
+  Credenciais: { es: "Credenciales", it: "Credenziali", en: "Credentials"},
+  Provedores: { es: "Proveedores", it: "Provider", en: "Providers"},
+  Conhecimento: { es: "Conocimiento", it: "Conoscenza", en: "Knowledge"},
+  Memória: { es: "Memoria", it: "Memoria", en: "Memory"},
+  Skills: { es: "Skills", it: "Skills", en: "Skills"},
+  Alertas: { es: "Alertas", it: "Alert", en: "Alerts"},
+  "Uso e orçamento": { es: "Uso y presupuesto", it: "Uso e budget", en: "Usage and budget"},
+  "Quem atende por você: instruções, modelo, ferramentas e publicação.": {
+    es: "Quien atiende por ti: instrucciones, modelo, herramientas y publicación.",
+    it: "Chi risponde per te: istruzioni, modello, strumenti e pubblicazione.",
+    en: "Who answers for you: instructions, model, tools, and publishing."
+  },
+  "Como o agente retoma uma conversa que esfriou, para nenhuma morrer no silêncio.": {
+    es: "Cómo el agente retoma una conversa que se enfrió, para que ninguna muera en silencio.",
+    it: "Come l'agente riprende una conversazione raffreddata, perché nessuna muoia nel silenzio.",
+    en: "How the agent picks a cold conversation back up, so none die in silence."
+  },
+  "Qual agente pega qual conversa, e quando o humano assume.": {
+    es: "Qué agente toma qué conversa, y cuándo asume el humano.",
+    it: "Quale agente prende quale conversazione, e quando subentra l'umano.",
+    en: "Which agent takes which conversation, and when the human steps in."
+  },
+  "A chave do provedor de IA que os agentes usam para pensar.": {
+    es: "La clave del proveedor de IA que los agentes usan para pensar.",
+    it: "La chiave del provider IA che gli agenti usano per pensare.",
+    en: "The AI provider key the agents use to think."
+  },
+  "Qual inteligência atende cada parte do sistema — e o que acontece se ela falhar.": {
+    es: "Qué inteligencia atiende cada parte del sistema — y qué pasa si falla.",
+    it: "Quale intelligenza risponde per ogni parte del sistema — e cosa succede se fallisce.",
+    en: "Which intelligence serves each part of the system — and what happens if it fails."
+  },
+  "Os materiais que o agente consulta antes de responder sobre o seu negócio.": {
+    es: "Los materiales que el agente consulta antes de responder sobre tu negocio.",
+    it: "I materiali che l'agente consulta prima di rispondere sul tuo business.",
+    en: "The materials the agent consults before answering about your business."
+  },
+  "O que o agente já aprendeu sobre a sua operação e reaproveita.": {
+    es: "Lo que el agente ya aprendió sobre tu operación y reaprovecha.",
+    it: "Ciò che l'agente ha già imparato sulla tua operazione e riutilizza.",
+    en: "What the agent has already learned about your operation and reuses."
+  },
+  "As ações que o agente pode executar sozinho durante o atendimento.": {
+    es: "Las acciones que el agente puede ejecutar solo durante la atención.",
+    it: "Le azioni che l'agente può eseguire da solo durante l'assistenza.",
+    en: "The actions the agent can take on its own during a conversation."
+  },
+  "Os atendimentos que o agente conduziu, do início ao desfecho.": {
+    es: "Las atenciones que el agente condujo, del inicio al desenlace.",
+    it: "Le conversazioni che l'agente ha condotto, dall'inizio all'esito.",
+    en: "The conversations the agent ran, from start to outcome."
+  },
+  "O que a IA encontrou e precisa de uma decisão sua.": {
+    es: "Lo que la IA encontró y necesita una decisión tuya.",
+    it: "Ciò che l'IA ha trovato e che richiede una tua decisione.",
+    en: "What the AI found and needs your decision on."
+  },
+  "Melhorias que a IA sugere para si mesma, esperando sua decisão.": {
+    es: "Mejoras que la IA sugiere para sí misma, esperando tu decisión.",
+    it: "Migliorie che l'IA suggerisce per sé stessa, in attesa della tua decisione.",
+    en: "Improvements the AI suggests for itself, waiting for your decision."
+  },
+  "O que a IA fez — e, quando falhou, o que aconteceu e o que fazer.": {
+    es: "Lo que la IA hizo — y, cuando falló, qué pasó y qué hacer.",
+    it: "Ciò che l'IA ha fatto — e, quando è fallita, cosa è successo e cosa fare.",
+    en: "What the AI did — and, when it failed, what happened and what to do."
+  },
+  "Quanto a IA consumiu e qual é o teto de gasto do mês.": {
+    es: "Cuánto consumió la IA y cuál es el techo de gasto del mes.",
+    it: "Quanto ha consumato l'IA e qual è il tetto di spesa del mese.",
+    en: "How much the AI consumed and what the month's spending cap is."
+  },
+
   // ─── Hub de Configurações (NavHub: seções, rótulos e descrições das cards) ───
   "Sua conta": { es: "Tu cuenta", it: "Il tuo account", en: "Your account"},
   "Sua empresa": { es: "Tu empresa", it: "La tua azienda", en: "Your company"},

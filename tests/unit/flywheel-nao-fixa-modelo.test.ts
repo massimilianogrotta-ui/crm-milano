@@ -49,7 +49,7 @@ const TURNO = {
 };
 
 /** Responde por PADRÃO do SQL, não por ordem — ordem quebra a cada refactor. */
-function poolFalso() {
+function poolFalso(locale: string | null = "it") {
   const inserts: Array<{ sql: string; params: unknown[] }> = [];
   const query = vi.fn(async (sql: string, params: unknown[] = []) => {
     if (sql.includes("from job_queue")) return { rows: [TURNO], rowCount: 1 };
@@ -58,6 +58,9 @@ function poolFalso() {
     }
     if (sql.includes("from lead_notes")) return { rows: [], rowCount: 0 };
     if (sql.includes("from lead_checkpoints")) return { rows: [], rowCount: 0 };
+    if (sql.includes("select locale from organizations")) {
+      return { rows: [{ locale }], rowCount: 1 };
+    }
     if (sql.includes("insert into flywheel_judge_verdicts")) {
       inserts.push({ sql, params });
       return { rows: [], rowCount: 1 };
@@ -103,5 +106,31 @@ describe("flywheel vivo", () => {
     // que estava fixo ali mentia sobre a instalação inteira que não usa Anthropic.
     expect(veredito?.params[6]).toBe("openrouter");
     expect(veredito?.params[7]).toBe("anthropic/claude-haiku-4.5");
+  });
+
+  it("pede o bullet do distiller no idioma da ORGANIZAÇÃO, não em pt-BR cravado", async () => {
+    chamadas.length = 0;
+    const { runFlywheelOnce } = await import("../../lib/agent-engine/flywheel/live");
+
+    // Org italiana (All-io): a proposta nasce em italiano. Era o bug visto na
+    // tela "Propostas": interface it, regra de playbook em português.
+    await runFlywheelOnce(poolFalso("it").pool, {} as never, { limit: 1, log: LOG });
+    const distillerIt = chamadas.find((c) => c.purpose === "flywheel_distiller");
+    expect(distillerIt, "distiller não foi chamado").toBeDefined();
+    const promptIt = String(
+      (distillerIt?.messages as Array<{ content: string }>)[0]?.content ?? "",
+    );
+    expect(promptIt).toContain("em italiano");
+    expect(promptIt).not.toContain("em pt-BR");
+
+    // Org sem locale reconhecido: cai no default da INSTALAÇÃO (APP_LOCALE),
+    // não em pt-BR do código. Aqui o teste roda sem APP_LOCALE → pt-BR histórico.
+    chamadas.length = 0;
+    await runFlywheelOnce(poolFalso(null).pool, {} as never, { limit: 1, log: LOG });
+    const distillerPadrao = chamadas.find((c) => c.purpose === "flywheel_distiller");
+    const promptPadrao = String(
+      (distillerPadrao?.messages as Array<{ content: string }>)[0]?.content ?? "",
+    );
+    expect(promptPadrao).toContain("em português do Brasil");
   });
 });
