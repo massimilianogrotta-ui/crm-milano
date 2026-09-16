@@ -116,6 +116,7 @@ describe("sidebarGroups", () => {
       "/app/kanban",
       "/app/contacts",
       "/app/tasks",
+      "/app/outreach",
     ]);
     expect(NAV_GROUPS.find((g) => g.id === "crm")?.hub?.href).toBe("/app/crm");
   });
@@ -142,7 +143,7 @@ describe("sidebarGroups", () => {
 });
 
 describe("hubSections", () => {
-  it("o hub do CRM é inventário: as cinco telas do grupo, nas duas seções", () => {
+  it("o hub do CRM é inventário: as seis telas do grupo, nas duas seções", () => {
     // As seções são a régua do sidebar escrita por extenso — o que se abre todo
     // dia contra o que se define uma vez. Lista EXATA: `toContain` deixaria uma
     // tela nova entrar sem que ninguém decidisse de que lado dela ela cai.
@@ -152,6 +153,7 @@ describe("hubSections", () => {
       "/app/kanban",
       "/app/contacts",
       "/app/tasks",
+      "/app/outreach",
       "/app/products",
       "/app/settings/tenant/pipelines",
     ]);

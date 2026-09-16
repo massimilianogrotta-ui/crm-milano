@@ -10819,6 +10819,21 @@ export const DICIONARIO: Traducoes = {
     it: "Questo punto usa il modello definito nella versione pubblicata dell'agente; la scelta del pannello non si applica.",
     en: "This point uses the model defined in the published version of the agent; the panel choice doesn't apply."
   },
+
+  // ─── app/app/outreach (fila "Para aprovar" do agente de prospecção, P0) ───
+  // As chaves comuns da tela ("Histórico", "Teste", "Aprovar", "Editar",
+  // "Salvar", "Primeiro contato", "Follow-up") já existem acima — reutilizar
+  // é a regra; duplicar é erro de compilação (TS1117).
+  "Para aprovar": { es: "Por aprobar", it: "Da approvare", en: "To approve" },
+  "O agente prepara os e-mails; nada sai sem a sua aprovação.": { es: "El agente prepara los correos; nada sale sin tu aprobación.", it: "L'agente prepara le email; non parte nulla senza la tua approvazione.", en: "The agent drafts the emails; nothing goes out without your approval." },
+  "Modo de teste: aprovar não envia nenhum e-mail de verdade.": { es: "Modo de prueba: aprobar no envía ningún correo real.", it: "Modalità prova: approvare non invia nessuna email vera.", en: "Test mode: approving does not send any real email." },
+  "E-mails que o agente preparou e que só saem com a sua aprovação.": { es: "Correos que el agente preparó y que solo salen con tu aprobación.", it: "Email preparate dall'agente che partono solo con la tua approvazione.", en: "Emails the agent drafted that only go out with your approval." },
+  "Nenhum e-mail para aprovar.": { es: "Ningún correo por aprobar.", it: "Nessuna email da approvare.", en: "No emails to approve." },
+  "Recusar": { es: "Rechazar", it: "Rifiuta", en: "Reject" },
+  "sent": { es: "enviado", it: "inviata", en: "sent" },
+  "rejected": { es: "rechazado", it: "rifiutata", en: "rejected" },
+  "failed": { es: "falló", it: "fallita", en: "failed" },
+  "approved": { es: "aprobado", it: "approvata", en: "approved" },
 };
 
 /**
