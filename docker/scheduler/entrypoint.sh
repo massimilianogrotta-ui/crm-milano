@@ -87,6 +87,12 @@ CRONS="
 30 3 * * *|120|api/v1/cron/kb-conversations-batch
 15 4 * * *|60|api/v1/cron/sync-model-catalog
 40 4 * * *|120|api/v1/cron/data-retention
+# O OUTREACH (P0): quatro giros por dia dentro da janela 9-19 da Itália. O
+# scheduler roda com TZ=UTC (compose de produção), então 7:30/10:30/14:30/16:30
+# UTC equivalem a 9:30/12:30/16:30/18:30 no horário de verão italiano. A rota
+# recusa sozinha o giro fora da janela italiana, então um fuso que mude não vira
+# email de madrugada: o pior caso é um giro que não faz nada.
+30 7,10,14,16 * * *|60|api/v1/cron/outreach-proposals
 "
 
 # CRONTAB_PATH é ponto de injeção do teste (tests/shell/scheduler-entrypoint.test.sh).
