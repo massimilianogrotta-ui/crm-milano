@@ -1623,6 +1623,10 @@ esac
   printf '# mostra o link de aceite na tela e o export de LGPD fica pendente.\n'
   envq RESEND_API_KEY "${RESEND_API_KEY:-}"
   envq RESEND_FROM_EMAIL "${RESEND_FROM_EMAIL:-}"
+  printf '# Agente de outreach (All-io). DRY_RUN diferente de "false" = nenhum\n'
+  printf '# e-mail real sai. ORG_ID vazio = worker desligado.\n'
+  envq OUTREACH_DRY_RUN "${OUTREACH_DRY_RUN:-}"
+  envq OUTREACH_ORG_ID "${OUTREACH_ORG_ID:-}"
   printf '# Qual provedor você escolheu na instalação. É o que faz a 2ª execução do\n'
   printf '# install.sh já vir com a sua escolha como padrão, em vez de re-adivinhar\n'
   printf '# pelas chaves presentes. A app não lê esta variável.\n'

@@ -210,6 +210,19 @@ export interface VoiceCallRow {
   duration_ms: number | null;
 }
 
+/** Uma proposta do agente de outreach dirigida ao titular (migration 0238). */
+export interface OutreachProposalRow {
+  id: string;
+  channel: string;
+  kind: string;
+  status: string;
+  to_address: string;
+  subject: string | null;
+  body: string;
+  created_at: string;
+  sent_at: string | null;
+}
+
 export interface ExportPayload {
   request_id: string;
   organization_id: string;
@@ -249,6 +262,12 @@ export interface ExportPayload {
    * próprio cascade.
    */
   voice_calls: VoiceCallRow[];
+  /**
+   * Propostas do agente de outreach (migration 0238). Entra pelo mesmo motivo
+   * de `voice_calls`: a 0238 pôs `outreach_proposals` na cascata de redação, e o
+   * que se apaga a pedido do titular é o que se entrega a pedido dele.
+   */
+  outreach_proposals?: OutreachProposalRow[];
   reply_drafts?: Array<{
     id: string;
     status: string;
@@ -611,6 +630,26 @@ export async function collectExportData(args: CollectArgs): Promise<ExportPayloa
   // O que existe aqui é o REGISTRO da ligação, nunca o áudio: gravação está
   // deliberadamente fora do produto (spec 18 §1.2), então não há mídia a
   // enfileirar como acontece com foto e anexo.
+  // Propostas do agente de outreach — `contact_id` direto (migration 0238).
+  let outreach_proposals: OutreachProposalRow[] = [];
+  if (contactId) {
+    const { data, error } = await admin
+      .from("outreach_proposals")
+      .select("id, channel, kind, status, to_address, subject, body, created_at, sent_at")
+      .eq("organization_id", organizationId)
+      .eq("contact_id", contactId)
+      .order("created_at", { ascending: false })
+      .limit(500);
+    if (error) {
+      logger.warn("[lgpd-export-worker] outreach proposals load failed", {
+        request_id: requestId,
+        error: error.message,
+      });
+    } else if (data) {
+      outreach_proposals = data as OutreachProposalRow[];
+    }
+  }
+
   let voice_calls: VoiceCallRow[] = [];
   if (contactId) {
     const { data, error } = await admin
@@ -807,6 +846,7 @@ export async function collectExportData(args: CollectArgs): Promise<ExportPayloa
     meeting_deliveries,
     appointment_notices,
     voice_calls,
+    outreach_proposals,
   };
 }
 
@@ -838,5 +878,6 @@ function emptyPayload(
     meeting_deliveries: [],
     appointment_notices: [],
     voice_calls: [],
+    outreach_proposals: [],
   };
 }
