@@ -34,6 +34,9 @@ async function contesto(): Promise<Contesto> {
 }
 
 export async function decidiProposta(id: string, azione: "approva" | "rifiuta"): Promise<Risultato> {
+  // Server action = endpoint pubblico: il valore arriva dal client e va
+  // verificato qui, altrimenti qualsiasi stringa diversa da "rifiuta" approva.
+  if (azione !== "approva" && azione !== "rifiuta") return { ok: false, error: "validation_failed" };
   const ctx = await contesto();
   if (!ctx.ok) return { ok: false, error: ctx.error };
   const supabase = await createClient();
