@@ -74,8 +74,8 @@ function Scheda({ riga }: { riga: RigaCoda }) {
       <p className="mb-2 text-xs text-muted-foreground">{riga.reason}</p>
       {modifica ? (
         <div className="flex flex-col gap-2">
-          <input className="rounded border px-2 py-1" value={subject} onChange={(e) => setSubject(e.target.value)} />
-          <textarea className="min-h-48 rounded border px-2 py-1" value={body} onChange={(e) => setBody(e.target.value)} />
+          <input className="rounded-md border px-2 py-1" value={subject} onChange={(e) => setSubject(e.target.value)} />
+          <textarea className="min-h-48 rounded-md border px-2 py-1" value={body} onChange={(e) => setBody(e.target.value)} />
         </div>
       ) : (
         <>
