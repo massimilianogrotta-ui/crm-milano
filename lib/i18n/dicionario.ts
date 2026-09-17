@@ -443,7 +443,7 @@ export const DICIONARIO: Traducoes = {
   "Ver tudo em Análise": { es: "Ver todo en Análisis", it: "Vedi tutto in Analisi", en: "See all in Analytics"},
   Conexões: { es: "Conexiones", it: "Connessioni", en: "Connections"},
   Webhooks: { es: "Webhooks", it: "Webhook", en: "Webhooks"},
-  Desempenho: { es: "Rendimiento", it: "Prestazioni", en: "Performance"},
+  Desempenho: { es: "Rendimiento", it: "Rendimento", en: "Performance"},
   "Evolução da IA": { es: "Evolución de la IA", it: "Evoluzione IA", en: "AI Evolution"},
   "Audit Log": { es: "Registro de auditoría", it: "Audit Log", en: "Audit Log"},
   Configurações: { es: "Configuración", it: "Impostazioni", en: "Settings"},
@@ -7702,7 +7702,7 @@ export const DICIONARIO: Traducoes = {
   },
   "presente (valor ocultado)": { es: "presente (valor oculto)", it: "presente (valore nascosto)", en: "present (value hidden)"},
   "Mensagens (total)": { es: "Mensajes (total)", it: "Messaggi (totale)", en: "Messages (total)"},
-  "Atividades": { es: "Actividades", it: "Attività", en: "Activities"},
+  "Atividades": { es: "Actividades", it: "Registro attività", en: "Activities"},
   "Entradas de auditoria": { es: "Entradas de auditoría", it: "Voci di audit", en: "Audit entries"},
   "Consentimentos": { es: "Consentimientos", it: "Consensi", en: "Consents"},
   "Ocultar amostra": { es: "Ocultar muestra", it: "Nascondi campione", en: "Hide sample"},
@@ -10819,6 +10819,29 @@ export const DICIONARIO: Traducoes = {
     it: "Questo punto usa il modello definito nella versione pubblicata dell'agente; la scelta del pannello non si applica.",
     en: "This point uses the model defined in the published version of the agent; the panel choice doesn't apply."
   },
+
+  // ─── app/app/outreach (fila "Para aprovar" do agente de prospecção, P0) ───
+  // As chaves comuns da tela ("Histórico", "Teste", "Aprovar", "Editar",
+  // "Salvar", "Primeiro contato", "Follow-up") já existem acima — reutilizar
+  // é a regra; duplicar é erro de compilação (TS1117).
+  "Para aprovar": { es: "Por aprobar", it: "Da approvare", en: "To approve" },
+  "O agente prepara os e-mails; nada sai sem a sua aprovação.": { es: "El agente prepara los correos; nada sale sin tu aprobación.", it: "L'agente prepara le email; non parte nulla senza la tua approvazione.", en: "The agent drafts the emails; nothing goes out without your approval." },
+  "Modo de teste: aprovar não envia nenhum e-mail de verdade.": { es: "Modo de prueba: aprobar no envía ningún correo real.", it: "Modalità prova: approvare non invia nessuna email vera.", en: "Test mode: approving does not send any real email." },
+  "E-mails que o agente preparou e que só saem com a sua aprovação.": { es: "Correos que el agente preparó y que solo salen con tu aprobación.", it: "Email preparate dall'agente che partono solo con la tua approvazione.", en: "Emails the agent drafted that only go out with your approval." },
+  "Nenhum e-mail para aprovar.": { es: "Ningún correo por aprobar.", it: "Nessuna email da approvare.", en: "No emails to approve." },
+  "Recusar": { es: "Rechazar", it: "Rifiuta", en: "Reject" },
+  "sent": { es: "enviado", it: "inviata", en: "sent" },
+  "rejected": { es: "rechazado", it: "rifiutata", en: "rejected" },
+  "failed": { es: "falló", it: "fallita", en: "failed" },
+  "approved": { es: "aprobado", it: "approvata", en: "approved" },
+  // Mensagens de erro da fila (mapeadas de códigos técnicos em
+  // `OutreachQueue.tsx`): "unauthenticated", "forbidden" e "forbidden_tenant"
+  // reutilizam frases já cadastradas acima para os mesmos códigos noutras
+  // telas; "not_found", "non_pending", "send_failed" e "contatto_bloccato"
+  // (este último já nasce em italiano em `lib/outreach/execute.ts`) são novas.
+  "Proposta não encontrada.": { es: "Propuesta no encontrada.", it: "Proposta non trovata.", en: "Proposal not found." },
+  "Esta proposta já foi decidida.": { es: "Esta propuesta ya fue decidida.", it: "Questa proposta è già stata decisa.", en: "This proposal has already been decided." },
+  "Não consegui enviar o e-mail agora.": { es: "No pude enviar el correo ahora.", it: "Impossibile inviare l'email in questo momento.", en: "Couldn't send the email right now." },
 };
 
 /**

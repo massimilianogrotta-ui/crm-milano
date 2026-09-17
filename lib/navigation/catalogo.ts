@@ -196,6 +196,21 @@ export const NAV_CATALOG = [
     sidebar: true,
   },
   {
+    // Agente de prospecção (outreach All-io, P0): o worker prepara os rascunhos
+    // de e-mail e um HUMANO decide. Fica no "dia a dia da venda" porque é fila de
+    // trabalho, não configuração — quem aprova entra aqui de manhã, como entra
+    // no Inbox. Sem `minRole`: `viewer` VÊ a fila (o worker já acha que só a
+    // IA nunca deve mandar), e a aprovação é cobrada pela server action, com o
+    // gate de `agent` que decide o efeito, não o que aparece.
+    href: "/app/outreach",
+    label: "Para aprovar",
+    description: "E-mails que o agente preparou e que só saem com a sua aprovação.",
+    icon: "Inbox",
+    group: "crm",
+    section: "O dia a dia da venda",
+    sidebar: true,
+  },
+  {
     // ⚠️ Esta tela nasceu porque a FERRAMENTA já existia sem ela. O agente de IA
     // vinha com "procurar produto na loja" ligada por padrão, lendo uma tabela
     // que ninguém nunca preencheu — e o efeito não era silêncio: era o agente

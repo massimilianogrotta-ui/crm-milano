@@ -259,6 +259,11 @@ const schema = z.object({
   RESEND_API_KEY: z.string().optional().default(""),
   RESEND_FROM_EMAIL: z.string().optional().default(""),
 
+  /** Agente outreach All-io: qualsiasi valore ≠ "false" = nessun invio reale. */
+  OUTREACH_DRY_RUN: z.string().optional(),
+  /** Org su cui gira il worker outreach. Vuota = worker spento. */
+  OUTREACH_ORG_ID: z.string().optional().default(""),
+
   /**
    * E-mail de suporte que a instalação mostra ao CLIENTE FINAL (tela de conta
    * suspensa, tela de cobrança).

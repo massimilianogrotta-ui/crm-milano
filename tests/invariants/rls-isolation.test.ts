@@ -245,6 +245,18 @@ beforeAll(() => {
                     'inbound', '5511900000000', 'ended');
         end if;
 
+        -- outreach_proposals (0238): a proposta do agente de outreach presa ao
+        -- lead e ao contato da org. Vazar entregaria ao vizinho a lista de quem
+        -- a organizacao pretende contatar e o texto preparado.
+        -- (sem crase nesta prosa: o bloco inteiro e um template literal de JS.)
+        if not exists (select 1 from public.outreach_proposals where organization_id = v_org) then
+          insert into public.outreach_proposals
+            (organization_id, lead_id, contact_id, kind, template_ref, to_address, body, reason)
+            values (v_org,
+                    (select id from public.crm_leads where organization_id = v_org limit 1),
+                    v_contact, 'first_contact', 'rls.v1', 'rls@example.com', 'rls body', 'rls');
+        end if;
+
         -- org_voice_calls (0236): o opt-in da chamada de voz, uma linha por
         -- organizacao. A PK e o proprio organization_id, entao a semente e
         -- idempotente por construcao — mas o if not exists fica pelo mesmo
@@ -327,6 +339,9 @@ export const TABLES = [
   // aceitou o risco do segundo aparelho vinculado: vazar entre organizacoes
   // diria a uma empresa quem, na outra, ligou a feature e quando.
   "org_voice_calls",
+  // migration 0238 — fila Da approvare do agente de outreach: email do contato
+  // e texto preparado. Escrita exige `agent`, que e o papel semeado aqui.
+  "outreach_proposals",
   // ⚠️ `webhook_lead_captures` (migration 0174) NÃO entra nesta lista, e a
   // ausência é deliberada: a policy dela exige `manager`, e o usuário semeado
   // aqui é `agent` — o controle positivo falharia por ACERTO, e a "correção"
