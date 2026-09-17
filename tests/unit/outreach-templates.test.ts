@@ -19,7 +19,7 @@ describe("segmentoDelLead", () => {
 describe("renderOutreach", () => {
   it("mette il nome dello studio e il footer STOP", () => {
     const r = renderOutreach({ kind: "first_contact", segmento: "dentista", nomeStudio: "Studio Bianchi" });
-    expect(r.templateRef).toBe("first_contact.dentista.v1");
+    expect(r.templateRef).toBe("first_contact.dentista.v2");
     expect(r.subject).toContain("Demo 10 min");
     expect(r.body).toContain("«Studio Bianchi»");
     expect(r.body).toContain("STOP");

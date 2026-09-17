@@ -25,8 +25,8 @@ function footer(nomeStudio: string, luogo: string): string {
   return [
     "— Max · All-io · Milano",
     "",
-    `Ricevi questa email come titolare/responsabile ${luogo} «${nomeStudio}».`,
-    'Non vuoi più riceverle? Rispondi con "STOP".',
+    `Riceve questa email come titolare/responsabile ${luogo} «${nomeStudio}».`,
+    'Non desidera più riceverle? Risponda con "STOP".',
   ].join("\n");
 }
 
@@ -37,7 +37,7 @@ export function renderOutreach(input: {
 }): { templateRef: string; subject: string; body: string } {
   const nome = pulisci(input.nomeStudio);
   const c = CHI[input.segmento];
-  const templateRef = `${input.kind}.${input.segmento}.v1`;
+  const templateRef = `${input.kind}.${input.segmento}.v2`;
 
   if (input.kind === "first_contact") {
     return {
@@ -47,9 +47,9 @@ export function renderOutreach(input: {
         "Buongiorno,",
         `sono Max di All-io: aiuto ${c.aiuto} a ridurre i buchi in agenda e i mancati ritorni dei ${c.pazienti}.`,
         "",
-        "In concreto, senza cambiare il vostro gestionale:",
+        "In concreto, senza cambiare il suo gestionale:",
         "promemoria, richiami e prenotazioni su WhatsApp, installati da me in un giorno.",
-        "Voi non toccate nulla. Costo fisso mensile, niente canoni nascosti.",
+        "Lei non deve toccare nulla. Costo fisso mensile, niente canoni nascosti.",
         "",
         `Le va di vedere una demo di 10 minuti questa settimana? Può provarla qui: ${CTA_DEMO}`,
         `oppure scrivermi su WhatsApp: ${CTA_WA}`,
@@ -61,7 +61,7 @@ export function renderOutreach(input: {
 
   return {
     templateRef,
-    subject: "Re: demo 10 min All-io",
+    subject: "Demo 10 min All-io — la ricontatto",
     body: [
       "Buongiorno,",
       `le avevo scritto la settimana scorsa per una demo di 10 minuti su agenda e ritorni dei ${c.pazienti}.`,
