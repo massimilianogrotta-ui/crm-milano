@@ -10834,6 +10834,14 @@ export const DICIONARIO: Traducoes = {
   "rejected": { es: "rechazado", it: "rifiutata", en: "rejected" },
   "failed": { es: "falló", it: "fallita", en: "failed" },
   "approved": { es: "aprobado", it: "approvata", en: "approved" },
+  // Mensagens de erro da fila (mapeadas de códigos técnicos em
+  // `OutreachQueue.tsx`): "unauthenticated", "forbidden" e "forbidden_tenant"
+  // reutilizam frases já cadastradas acima para os mesmos códigos noutras
+  // telas; "not_found", "non_pending", "send_failed" e "contatto_bloccato"
+  // (este último já nasce em italiano em `lib/outreach/execute.ts`) são novas.
+  "Proposta não encontrada.": { es: "Propuesta no encontrada.", it: "Proposta non trovata.", en: "Proposal not found." },
+  "Esta proposta já foi decidida.": { es: "Esta propuesta ya fue decidida.", it: "Questa proposta è già stata decisa.", en: "This proposal has already been decided." },
+  "Não consegui enviar o e-mail agora.": { es: "No pude enviar el correo ahora.", it: "Impossibile inviare l'email in questo momento.", en: "Couldn't send the email right now." },
 };
 
 /**

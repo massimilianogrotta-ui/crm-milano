@@ -8,6 +8,25 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useT } from "@/hooks/i18n/useT";
 
+/**
+ * Códigos técnicos que `decide.ts` e `execute.ts` devolvem, mapeados para a
+ * frase em português que `t()` sabe traduzir — mesmo padrão de
+ * `app/app/settings/tenant/_danger-zone.tsx`. Um código sem entrada aqui (ex.:
+ * erro dinâmico do provedor de e-mail) passa direto por `t()`, que devolve o
+ * próprio texto sem tradução — nunca português cru, porque nunca É português.
+ */
+const ERRO_EM_PORTUGUES: Record<string, string> = {
+  unauthenticated: "Sua sessão expirou. Entre de novo para continuar.",
+  forbidden: "Você não tem permissão para esta ação.",
+  forbidden_tenant: "Não consegui identificar sua empresa. Recarregue a página.",
+  forbidden_role: "Você não tem permissão para esta ação.",
+  not_found: "Proposta não encontrada.",
+  validation_failed: "Confira os campos: algum valor não está no formato esperado.",
+  non_pending: "Esta proposta já foi decidida.",
+  send_failed: "Não consegui enviar o e-mail agora.",
+  contatto_bloccato: "Contato bloqueado — envio de mensagens desabilitado.",
+};
+
 export interface RigaCoda {
   id: string;
   status: string;
@@ -43,7 +62,9 @@ export function OutreachQueue({ righe }: { righe: RigaCoda[] }) {
             <Badge variant="outline">{t(r.status === "sent" && r.dry_run ? "Teste" : r.status)}</Badge>
             <span className="font-medium">{r.leadTitle}</span>
             <span className="text-muted-foreground">{r.subject}</span>
-            {r.error && <span className="text-destructive">{r.error}</span>}
+            {r.error && (
+              <span className="text-destructive">{t(ERRO_EM_PORTUGUES[r.error] ?? r.error)}</span>
+            )}
           </div>
         ))}
       </section>
@@ -61,7 +82,7 @@ function Scheda({ riga }: { riga: RigaCoda }) {
   const esegui = (fn: () => Promise<{ ok: boolean; error?: string }>) =>
     start(async () => {
       const r = await fn();
-      if (!r.ok) toast.error(r.error ?? "erro");
+      if (!r.ok) toast.error(t(r.error ? (ERRO_EM_PORTUGUES[r.error] ?? r.error) : "erro"));
     });
 
   return (
