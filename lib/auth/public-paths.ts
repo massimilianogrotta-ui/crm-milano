@@ -49,6 +49,10 @@ export const PUBLIC_PATHS: RegExp[] = [
   // `GET` da listagem, não `/api/v1/contacts/[id]` nem `/import`, que ainda
   // não têm suporte a Bearer.
   /^\/api\/v1\/contacts$/,
+  // API riservata dell'agente Account manager: il proxy non decide, la rotta
+  // esige Bearer `dsk_` con scope `am:*` e arrivo dal nome Tailscale
+  // (`lib/account-manager/guard.ts`). Nessuna sessione cookie è accettata lì.
+  /^\/api\/v1\/account-manager\/.+$/,
   /^\/_next\//,
   /^\/favicon\.ico$/,
   // O ícone da aba (`app/icon.tsx`), que o `<head>` de TODA página pede —
