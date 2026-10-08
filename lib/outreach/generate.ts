@@ -11,15 +11,22 @@ export interface EsitoGenerazione {
   errore?: string;
 }
 
+const BLOCCO_STORICO = 100;
+
 /** Usa l'admin client: OGNI query filtra organization_id a mano (regola di lib/supabase/admin.ts). */
 export async function generaProposte(admin: SupabaseClient, orgId: string, ora = new Date()): Promise<EsitoGenerazione> {
+  function errore(fase: string, message: string, candidati = 0, create = 0): EsitoGenerazione {
+    logger.warn("[outreach] giro in errore", { organization_id: orgId, fase, error: message });
+    return { stato: "errore", candidati, create, errore: message };
+  }
+
   const { data: pipeline, error: ePipe } = await admin
     .from("crm_pipelines")
     .select("id")
     .eq("organization_id", orgId)
     .eq("slug", OUTREACH_PIPELINE_SLUG)
     .maybeSingle();
-  if (ePipe) return { stato: "errore", candidati: 0, create: 0, errore: ePipe.message };
+  if (ePipe) return errore("pipeline", ePipe.message);
   if (!pipeline) return { stato: "pipeline_assente", candidati: 0, create: 0 };
 
   const { data: stages, error: eStages } = await admin
@@ -28,7 +35,7 @@ export async function generaProposte(admin: SupabaseClient, orgId: string, ora =
     .eq("organization_id", orgId)
     .eq("pipeline_id", pipeline.id)
     .in("slug", [STAGE_DA_CONTATTARE, STAGE_IN_ATTESA]);
-  if (eStages) return { stato: "errore", candidati: 0, create: 0, errore: eStages.message };
+  if (eStages) return errore("stages", eStages.message);
   const slugPerId = new Map((stages ?? []).map((s) => [s.id as string, s.slug as string]));
   if (slugPerId.size === 0) return { stato: "pipeline_assente", candidati: 0, create: 0 };
 
@@ -41,7 +48,7 @@ export async function generaProposte(admin: SupabaseClient, orgId: string, ora =
     .in("stage_id", [...slugPerId.keys()])
     .order("created_at", { ascending: true })
     .limit(500);
-  if (eLeads) return { stato: "errore", candidati: 0, create: 0, errore: eLeads.message };
+  if (eLeads) return errore("leads", eLeads.message);
 
   const candidati: Candidato[] = (leads ?? []).map((l) => {
     const contatto = (Array.isArray(l.contacts) ? l.contacts[0] : l.contacts) as
@@ -59,20 +66,24 @@ export async function generaProposte(admin: SupabaseClient, orgId: string, ora =
     };
   });
 
-  const { data: storicoRows, error: eStorico } = await admin
-    .from("outreach_proposals")
-    .select("lead_id, kind, status, created_at, sent_at")
-    .eq("organization_id", orgId)
-    .eq("channel", "email")
-    .in("lead_id", candidati.map((c) => c.leadId));
-  if (eStorico) return { stato: "errore", candidati: candidati.length, create: 0, errore: eStorico.message };
-  const storico: StoricoProposta[] = (storicoRows ?? []).map((s) => ({
-    leadId: s.lead_id as string,
-    kind: s.kind as StoricoProposta["kind"],
-    status: s.status as StoricoProposta["status"],
-    createdAt: s.created_at as string,
-    sentAt: (s.sent_at as string | null) ?? null,
-  }));
+  const storico: StoricoProposta[] = [];
+  // Limita gli ID per richiesta: la query GET con tutti i lead supera il limite degli header.
+  for (let i = 0; i < candidati.length; i += BLOCCO_STORICO) {
+    const { data: storicoRows, error: eStorico } = await admin
+      .from("outreach_proposals")
+      .select("lead_id, kind, status, created_at, sent_at")
+      .eq("organization_id", orgId)
+      .eq("channel", "email")
+      .in("lead_id", candidati.slice(i, i + BLOCCO_STORICO).map((c) => c.leadId));
+    if (eStorico) return errore("storico", eStorico.message, candidati.length);
+    storico.push(...(storicoRows ?? []).map((s) => ({
+      leadId: s.lead_id as string,
+      kind: s.kind as StoricoProposta["kind"],
+      status: s.status as StoricoProposta["status"],
+      createdAt: s.created_at as string,
+      sentAt: (s.sent_at as string | null) ?? null,
+    })));
+  }
 
   const nuove = scegliProposte(candidati, storico, ora);
   if (nuove.length === 0) return { stato: "ok", candidati: candidati.length, create: 0 };
@@ -107,8 +118,7 @@ export async function generaProposte(admin: SupabaseClient, orgId: string, ora =
       .single();
     if (eIns) {
       if (eIns.code === "23505") continue;
-      logger.warn("[outreach] insert proposte fallito", { organization_id: orgId, error: eIns.message });
-      return { stato: "errore", candidati: candidati.length, create: create.length, errore: eIns.message };
+      return errore("insert", eIns.message, candidati.length, create.length);
     }
     if (riga?.id) create.push(riga.id as string);
   }
