@@ -121,3 +121,23 @@ export function idiomaDoVisitante(acceptLanguage: string | null | undefined): Id
   }
   return idiomaDaInstalacao();
 }
+
+/**
+ * A língua das telas de ACESSO (login, cadastro, recuperação, MFA) — uma regra
+ * só para a casca e para cada página, porque elas divergiam: a casca já falava
+ * a língua do navegador e `/login/forgot` ficava em português, título e
+ * subtítulo, embaixo de um aviso já traduzido.
+ *
+ * Preferência gravada no perfil, SE for um idioma que servimos; senão a do
+ * visitante (Accept-Language → `APP_LOCALE`). Perfil sem `locale` não pode
+ * virar `pt-BR` à força: quem pede link de redefinição quase nunca escolheu
+ * idioma no perfil, e essa é justamente a pessoa sem contexto nenhum na tela.
+ */
+export function idiomaDaFachada(
+  localeDoPerfil: string | null | undefined,
+  acceptLanguage: string | null | undefined,
+): Idioma {
+  return (IDIOMAS as readonly string[]).includes(localeDoPerfil ?? "")
+    ? (localeDoPerfil as Idioma)
+    : idiomaDoVisitante(acceptLanguage);
+}
