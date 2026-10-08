@@ -22,5 +22,6 @@ export const OUTREACH_PIPELINE_SLUG = "milano-prospect";
 export const STAGE_DA_CONTATTARE = "da-contattare";
 export const STAGE_IN_ATTESA = "in-attesa";
 export const MAX_PROPOSTE_PER_GIRO = 20;
+export const MAX_ID_PER_LETTURA = 100;
 export const GIORNI_DEDUP = 7;
 export const GIORNI_PRIMA_DEL_RICONTATTO = 7;

@@ -1,7 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { logger } from "@/lib/logger";
-import { isOutreachDryRun, OUTREACH_PIPELINE_SLUG, STAGE_DA_CONTATTARE, STAGE_IN_ATTESA } from "@/lib/outreach/config";
+import { isOutreachDryRun, MAX_ID_PER_LETTURA, OUTREACH_PIPELINE_SLUG, STAGE_DA_CONTATTARE, STAGE_IN_ATTESA } from "@/lib/outreach/config";
 import { scegliProposte, type Candidato, type StoricoProposta } from "@/lib/outreach/select";
 
 export interface EsitoGenerazione {
@@ -9,6 +9,12 @@ export interface EsitoGenerazione {
   candidati: number;
   create: number;
   errore?: string;
+}
+
+function dettaglioErrore(errore: { message: string; cause?: unknown }): string {
+  const causa = errore.cause;
+  const messaggioCausa = causa instanceof Error ? causa.message : typeof causa === "string" ? causa : null;
+  return messaggioCausa ? `${errore.message} (cause: ${messaggioCausa})` : errore.message;
 }
 
 /** Usa l'admin client: OGNI query filtra organization_id a mano (regola di lib/supabase/admin.ts). */
@@ -19,7 +25,10 @@ export async function generaProposte(admin: SupabaseClient, orgId: string, ora =
     .eq("organization_id", orgId)
     .eq("slug", OUTREACH_PIPELINE_SLUG)
     .maybeSingle();
-  if (ePipe) return { stato: "errore", candidati: 0, create: 0, errore: ePipe.message };
+  if (ePipe) {
+    logger.warn("[outreach] lettura pipeline fallita", { organization_id: orgId, error: dettaglioErrore(ePipe) });
+    return { stato: "errore", candidati: 0, create: 0, errore: ePipe.message };
+  }
   if (!pipeline) return { stato: "pipeline_assente", candidati: 0, create: 0 };
 
   const { data: stages, error: eStages } = await admin
@@ -28,7 +37,10 @@ export async function generaProposte(admin: SupabaseClient, orgId: string, ora =
     .eq("organization_id", orgId)
     .eq("pipeline_id", pipeline.id)
     .in("slug", [STAGE_DA_CONTATTARE, STAGE_IN_ATTESA]);
-  if (eStages) return { stato: "errore", candidati: 0, create: 0, errore: eStages.message };
+  if (eStages) {
+    logger.warn("[outreach] lettura stage fallita", { organization_id: orgId, error: dettaglioErrore(eStages) });
+    return { stato: "errore", candidati: 0, create: 0, errore: eStages.message };
+  }
   const slugPerId = new Map((stages ?? []).map((s) => [s.id as string, s.slug as string]));
   if (slugPerId.size === 0) return { stato: "pipeline_assente", candidati: 0, create: 0 };
 
@@ -41,7 +53,10 @@ export async function generaProposte(admin: SupabaseClient, orgId: string, ora =
     .in("stage_id", [...slugPerId.keys()])
     .order("created_at", { ascending: true })
     .limit(500);
-  if (eLeads) return { stato: "errore", candidati: 0, create: 0, errore: eLeads.message };
+  if (eLeads) {
+    logger.warn("[outreach] lettura lead fallita", { organization_id: orgId, error: dettaglioErrore(eLeads) });
+    return { stato: "errore", candidati: 0, create: 0, errore: eLeads.message };
+  }
 
   const candidati: Candidato[] = (leads ?? []).map((l) => {
     const contatto = (Array.isArray(l.contacts) ? l.contacts[0] : l.contacts) as
@@ -59,14 +74,22 @@ export async function generaProposte(admin: SupabaseClient, orgId: string, ora =
     };
   });
 
-  const { data: storicoRows, error: eStorico } = await admin
-    .from("outreach_proposals")
-    .select("lead_id, kind, status, created_at, sent_at")
-    .eq("organization_id", orgId)
-    .eq("channel", "email")
-    .in("lead_id", candidati.map((c) => c.leadId));
-  if (eStorico) return { stato: "errore", candidati: candidati.length, create: 0, errore: eStorico.message };
-  const storico: StoricoProposta[] = (storicoRows ?? []).map((s) => ({
+  const storicoRows: Array<{ lead_id: string; kind: string; status: string; created_at: string; sent_at: string | null }> = [];
+  // Limita la lunghezza della GET PostgREST anche quando arrivano 500 lead.
+  for (let i = 0; i < candidati.length; i += MAX_ID_PER_LETTURA) {
+    const { data, error: eStorico } = await admin
+      .from("outreach_proposals")
+      .select("lead_id, kind, status, created_at, sent_at")
+      .eq("organization_id", orgId)
+      .eq("channel", "email")
+      .in("lead_id", candidati.slice(i, i + MAX_ID_PER_LETTURA).map((c) => c.leadId));
+    if (eStorico) {
+      logger.warn("[outreach] lettura storico fallita", { organization_id: orgId, error: dettaglioErrore(eStorico) });
+      return { stato: "errore", candidati: candidati.length, create: 0, errore: eStorico.message };
+    }
+    storicoRows.push(...(data ?? []));
+  }
+  const storico: StoricoProposta[] = storicoRows.map((s) => ({
     leadId: s.lead_id as string,
     kind: s.kind as StoricoProposta["kind"],
     status: s.status as StoricoProposta["status"],
@@ -107,7 +130,7 @@ export async function generaProposte(admin: SupabaseClient, orgId: string, ora =
       .single();
     if (eIns) {
       if (eIns.code === "23505") continue;
-      logger.warn("[outreach] insert proposte fallito", { organization_id: orgId, error: eIns.message });
+      logger.warn("[outreach] insert proposte fallito", { organization_id: orgId, error: dettaglioErrore(eIns) });
       return { stato: "errore", candidati: candidati.length, create: create.length, errore: eIns.message };
     }
     if (riga?.id) create.push(riga.id as string);
