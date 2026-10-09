@@ -29,6 +29,7 @@ import { testAgentVersion } from "@/lib/agent-engine/agent/sandbox";
 import { requestTurnDeps } from "@/lib/agent-engine/agent/request-deps";
 import { getRequestPool } from "@/lib/agent-engine/db/request-pool";
 import { traduzir } from "@/lib/i18n/dicionario";
+import { logger } from "@/lib/logger";
 
 export const dynamic = "force-dynamic";
 
@@ -135,13 +136,44 @@ export async function POST(req: NextRequest, ctx: Ctx): Promise<Response> {
       })
       .eq("organization_id", activeOrg.orgId)
       .eq("id", runRow.id);
-  } catch {
+  } catch (err) {
+    const error = err instanceof Error ? err : null;
+    const sensitive = [
+      parsed.data.sample_message,
+      version.system_prompt,
+      ...Object.values(parsed.data.sample_contact ?? {}),
+    ].filter((value): value is string => typeof value === "string" && value.length > 0);
+    const sanitize = (value: string) => {
+      let redacted = value;
+      for (const item of sensitive) redacted = redacted.replaceAll(item, "[redacted]");
+      return redacted
+        .replace(/(sk-[\w-]{8,}|(?:api[_-]?key|authorization|token)\s*[:=]\s*)\S+/gi, "[redacted]")
+        .slice(0, 500);
+    };
+    const causa = sanitize(error?.message ?? String(err));
+    const cause = error?.cause;
+    const details = err && typeof err === "object" ? (err as Record<string, unknown>) : null;
+    logger.error("ai-agent-test: execução do teste falhou", {
+      organization_id: activeOrg.orgId,
+      request_id: requestId,
+      agent_id: id,
+      version_id: vid,
+      run_id: runRow.id,
+      causa,
+      erro_nome: error?.name,
+      ...(cause != null
+        ? { causa_interna: sanitize(cause instanceof Error ? cause.message : String(cause)) }
+        : {}),
+      ...(details?.code != null ? { erro_codigo: sanitize(String(details.code)) } : {}),
+      ...(details?.status != null ? { erro_status: sanitize(String(details.status)) } : {}),
+    });
     await admin
       .from("ai_agent_runs")
       .update({
         status: "error",
         completed_at: new Date().toISOString(),
         error_code: "preview_failed",
+        error_message: causa.slice(0, 240),
       })
       .eq("organization_id", activeOrg.orgId)
       .eq("id", runRow.id);
