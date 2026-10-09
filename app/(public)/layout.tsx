@@ -3,7 +3,7 @@ import { marcaEhADoProduto } from "@/lib/branding";
 import { marcaDaSaida } from "@/lib/branding/saida";
 import { createClient } from "@/lib/supabase/server";
 import { IdiomaProvider } from "@/lib/i18n/IdiomaProvider";
-import { idiomaDoVisitante } from "@/lib/i18n/idiomas";
+import { idiomaDaFachada } from "@/lib/i18n/idiomas";
 import { headers } from "next/headers";
 
 /**
@@ -50,9 +50,10 @@ export default async function PublicLayout({ children }: { children: React.React
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  const locale = user
-    ? ((user.user_metadata?.locale as string | undefined) ?? null)
-    : idiomaDoVisitante((await headers()).get("accept-language"));
+  const locale = idiomaDaFachada(
+    user?.user_metadata?.locale as string | undefined,
+    (await headers()).get("accept-language"),
+  );
 
   return (
     <IdiomaProvider locale={locale}>

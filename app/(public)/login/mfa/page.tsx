@@ -1,11 +1,15 @@
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
 import { createClient } from "@/lib/supabase/server";
 import { MfaForm } from "@/components/auth/MfaForm";
-import { normalizarIdioma } from "@/lib/i18n/idiomas";
+import { idiomaDaFachada, idiomaDoVisitante } from "@/lib/i18n/idiomas";
 import { traduzir } from "@/lib/i18n/dicionario";
 
-export const metadata = { title: "Verificação em duas etapas" };
+export async function generateMetadata() {
+  const idioma = idiomaDoVisitante((await headers()).get("accept-language"));
+  return { title: traduzir("Verificação em duas etapas", idioma) };
+}
 
 export default async function MfaChallengePage({
   searchParams,
@@ -23,8 +27,9 @@ export default async function MfaChallengePage({
   const hasVerified = !!factorsData?.totp?.some((f) => f.status === "verified");
   if (!hasVerified) redirect("/app");
 
-  const idioma = normalizarIdioma(
-    (user.user_metadata?.locale as string | undefined) ?? null,
+  const idioma = idiomaDaFachada(
+    user.user_metadata?.locale as string | undefined,
+    (await headers()).get("accept-language"),
   );
   const t = (texto: string) => traduzir(texto, idioma);
 

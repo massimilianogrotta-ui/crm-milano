@@ -5,7 +5,7 @@ import { SignupForm } from "@/components/auth/SignupForm";
 import { branding } from "@/lib/branding";
 import { verifyInviteToken } from "@/lib/auth/invite-token";
 import { createClient } from "@/lib/supabase/server";
-import { idiomaDoVisitante, normalizarIdioma } from "@/lib/i18n/idiomas";
+import { idiomaDaFachada, idiomaDoVisitante } from "@/lib/i18n/idiomas";
 import { traduzir } from "@/lib/i18n/dicionario";
 
 export async function generateMetadata() {
@@ -40,9 +40,10 @@ export default async function SignupPage({
   // Visitante sem preferência gravada: fala a língua do NAVEGADOR dele;
   // o default da instalação (APP_LOCALE) é só o fallback final.
   const acceptLanguage = (await headers()).get("accept-language");
-  const idioma = user
-    ? normalizarIdioma((user.user_metadata?.locale as string | undefined) ?? null)
-    : idiomaDoVisitante(acceptLanguage);
+  const idioma = idiomaDaFachada(
+    user?.user_metadata?.locale as string | undefined,
+    acceptLanguage,
+  );
   const t = (texto: string) => traduzir(texto, idioma);
 
   return (

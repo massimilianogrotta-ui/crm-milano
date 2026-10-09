@@ -1,11 +1,15 @@
 import Link from "next/link";
+import { headers } from "next/headers";
 
 import { RecoveryForm } from "@/components/auth/RecoveryForm";
 import { createClient } from "@/lib/supabase/server";
-import { normalizarIdioma } from "@/lib/i18n/idiomas";
+import { idiomaDaFachada, idiomaDoVisitante } from "@/lib/i18n/idiomas";
 import { traduzir } from "@/lib/i18n/dicionario";
 
-export const metadata = { title: "Recuperar acesso" };
+export async function generateMetadata() {
+  const idioma = idiomaDoVisitante((await headers()).get("accept-language"));
+  return { title: traduzir("Recuperar acesso", idioma) };
+}
 
 export default async function RecoveryPage({
   searchParams,
@@ -17,8 +21,9 @@ export default async function RecoveryPage({
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  const idioma = normalizarIdioma(
-    (user?.user_metadata?.locale as string | undefined) ?? null,
+  const idioma = idiomaDaFachada(
+    user?.user_metadata?.locale as string | undefined,
+    (await headers()).get("accept-language"),
   );
   const t = (texto: string) => traduzir(texto, idioma);
 
