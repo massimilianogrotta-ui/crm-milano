@@ -10,6 +10,7 @@ import type { NextRequest } from "next/server";
 
 import { ok, fail } from "@/lib/api/wrappers";
 import { env } from "@/lib/env";
+import { logger } from "@/lib/logger";
 import { outreachOrgId } from "@/lib/outreach/config";
 import { generaProposte } from "@/lib/outreach/generate";
 import { bloccaOutreach } from "@/lib/outreach/lock";
@@ -44,6 +45,10 @@ export async function GET(req: NextRequest): Promise<Response> {
     try {
       const esito = await generaProposte(createAdminClient(), orgId);
       return ok(esito, { requestId });
+    } catch (e) {
+      const errore = e instanceof Error ? e.message : String(e);
+      logger.error("[outreach] giro interrotto da eccezione", { organization_id: orgId, error: errore, requestId });
+      return fail("internal_error", "Outreach run failed.", 500, { requestId });
     } finally { await libera().catch(() => undefined); }
   } catch {
     return fail("internal_error", "Outreach lock unavailable.", 503, { requestId });

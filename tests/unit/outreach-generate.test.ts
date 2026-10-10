@@ -78,4 +78,11 @@ describe("generaProposte", () => {
     expect(esito.create).toBe(previsto);
     expect(inserts).toHaveLength(previsto);
   });
+
+  it("crea al massimo 10 proposte con 228 candidati e storico vuoto", async () => {
+    const { admin, inserts } = client(228);
+    const esito = await generaProposte(admin, "org-1");
+    expect(esito).toEqual({ stato: "ok", candidati: 228, create: 10 });
+    expect(inserts).toHaveLength(10);
+  });
 });
