@@ -5,7 +5,7 @@ import { ROLE_RANK } from "@/lib/auth/types";
 import { createClient } from "@/lib/supabase/server";
 import type { CredentialRow } from "@/hooks/ai/useCredentials";
 import { traduzir } from "@/lib/i18n/dicionario";
-import { contarUsoPublicado, type VersaoVinculada } from "@/lib/ai/credenciais/uso";
+import { contarReferencias, contarUsoPublicado, type VersaoVinculada } from "@/lib/ai/credenciais/uso";
 import { CredentialsList } from "./_components/CredentialsList";
 
 export const dynamic = "force-dynamic";
@@ -32,8 +32,9 @@ export default async function CredentialsPage() {
   const credentials = (data ?? []) as unknown as CredentialRow[];
   const canWrite = ROLE_RANK[activeOrg.role] >= ROLE_RANK.admin;
 
-  // Mesma regra do DELETE: só conta a versão PUBLICADA de agente não arquivado.
+  // Uso ativo para a tela; todas as referências para a trava de exclusão.
   let usageMap: Record<string, number> = {};
+  let referencesMap: Record<string, number> = {};
   if (credentials.length > 0) {
     const { data: linked } = await supabase
       .from("ai_agent_versions")
@@ -43,6 +44,7 @@ export default async function CredentialsPage() {
       .eq("organization_id", activeOrg.orgId)
       .in("credential_id", credentials.map((c) => c.id));
     usageMap = contarUsoPublicado((linked ?? []) as unknown as VersaoVinculada[]);
+    referencesMap = contarReferencias((linked ?? []) as unknown as VersaoVinculada[]);
   }
 
   return (
@@ -60,6 +62,7 @@ export default async function CredentialsPage() {
         initialData={credentials}
         canWrite={canWrite}
         usageMap={usageMap}
+        referencesMap={referencesMap}
       />
     </div>
   );

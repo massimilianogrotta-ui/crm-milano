@@ -2,10 +2,8 @@ import { requireSupportWrite } from "@/lib/impersonate/support";
 /**
  * DELETE /api/v1/ai/credentials/:id (admin)
  *
- * Bloqueia se a credential é referenciada por uma `ai_agent_versions` que é a
- * `published_version_id` de algum agent não-arquivado da org.
- * Caso contrário, deleta. A FK ON DELETE RESTRICT é a última linha de defesa
- * (drafts não-publicadas também referenciam — preferimos erro 409 amigável).
+ * Bloqueia se qualquer `ai_agent_versions` referencia a credencial, como a FK
+ * ON DELETE RESTRICT. Inclui versões antigas, rascunhos e agentes arquivados.
  */
 import { randomUUID } from "node:crypto";
 import { type NextRequest } from "next/server";
@@ -14,7 +12,7 @@ import { ok, fail } from "@/lib/api/wrappers";
 import { audit } from "@/lib/audit";
 import { requireRole } from "@/lib/auth/require-role";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { contarUsoPublicado, type VersaoVinculada } from "@/lib/ai/credenciais/uso";
+import { contarReferencias, type VersaoVinculada } from "@/lib/ai/credenciais/uso";
 import { traduzir } from "@/lib/i18n/dicionario";
 
 export const dynamic = "force-dynamic";
@@ -49,7 +47,7 @@ export async function DELETE(
     return fail("not_found", t("Credential não encontrada."), 404, { requestId });
   }
 
-  // Está referenciada por alguma versão que é published_version_id de agent ativo?
+  // A FK protege qualquer versão, mesmo que não esteja publicada.
   const { data: linked, error: linkErr } = await admin
     .from("ai_agent_versions")
     .select(
@@ -62,12 +60,12 @@ export async function DELETE(
     return fail("internal_error", "Erro ao verificar uso da credential.", 500, { requestId });
   }
 
-  const inUse = (contarUsoPublicado((linked ?? []) as unknown as VersaoVinculada[])[id] ?? 0) > 0;
+  const inUse = (contarReferencias((linked ?? []) as unknown as VersaoVinculada[])[id] ?? 0) > 0;
 
   if (inUse) {
     return fail(
       "credential_in_use",
-      t("Credential é usada por uma versão publicada de agent. Despublique antes de deletar."),
+      t("Credential referenciada (FK ON DELETE RESTRICT). Remova as versões antes."),
       409,
       { requestId },
     );

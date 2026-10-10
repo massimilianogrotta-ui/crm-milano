@@ -4,7 +4,7 @@
  * tooltip "em uso" quando a API deixaria excluir. Uma regra, dois consumidores.
  */
 import { describe, expect, it } from "vitest";
-import { contarUsoPublicado, type VersaoVinculada } from "./uso";
+import { contarReferencias, contarUsoPublicado, type VersaoVinculada } from "./uso";
 
 const linha = (over: Partial<VersaoVinculada> & { publicada?: string | null; arquivado?: boolean }): VersaoVinculada => ({
   id: over.id ?? "v1",
@@ -40,4 +40,10 @@ describe("contarUsoPublicado", () => {
     ]);
     expect(r).toEqual({ c1: 2, c2: 1 });
   });
+});
+
+it("a FK conta também versões históricas e de agentes arquivados", () => {
+  const linhas = [linha({ id: "v1", publicada: "v1" }), linha({ id: "v2", publicada: "v1" }), linha({ id: "v3", arquivado: true })];
+  expect(contarUsoPublicado(linhas)).toEqual({ c1: 1 });
+  expect(contarReferencias(linhas)).toEqual({ c1: 3 });
 });

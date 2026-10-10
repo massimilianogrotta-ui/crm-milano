@@ -8,7 +8,7 @@
  *
  * Timeout 5s, sem retry. Erros 401 são distintos de erros de rede.
  */
-import { PROVEDORES } from "@/lib/ai/pontos/provedores";
+import type { PROVEDORES } from "@/lib/ai/pontos/provedores";
 
 /**
  * Os provedores cuja CHAVE este arquivo sabe validar.
@@ -48,6 +48,8 @@ async function timedFetch(url: string, init: RequestInit): Promise<Response> {
 
 export async function validateAnthropicKey(apiKey: string): Promise<ValidationResult> {
   try {
+    // O catálogo fornece um modelo para a prova, mas não comprova sozinho que
+    // a chave consegue executar uma chamada do agente.
     const res = await timedFetch("https://api.anthropic.com/v1/models", {
       method: "GET",
       headers: {
@@ -55,14 +57,24 @@ export async function validateAnthropicKey(apiKey: string): Promise<ValidationRe
         "anthropic-version": "2023-06-01",
       },
     });
-    if (res.status === 401 || res.status === 403) {
-      return { ok: false, error: "auth_failed_401" };
-    }
-    if (!res.ok) {
-      return { ok: false, error: `provider_status_${res.status}` };
-    }
+    if (res.status === 401 || res.status === 403) return { ok: false, error: "auth_failed_401" };
+    if (!res.ok) return { ok: false, error: `provider_status_${res.status}` };
     const json = (await res.json()) as { data?: { id: string }[] };
     const models = (json.data ?? []).map((m) => m.id).filter(Boolean);
+    const model = models.find((id) => id.includes("haiku")) ?? models[0];
+    if (!model) return { ok: false, error: "provider_models_empty" };
+
+    const auth = await timedFetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "x-api-key": apiKey,
+        "anthropic-version": "2023-06-01",
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({ model, max_tokens: 1, messages: [{ role: "user", content: "ping" }] }),
+    });
+    if (auth.status === 401 || auth.status === 403) return { ok: false, error: "auth_failed_401" };
+    if (!auth.ok) return { ok: false, error: `provider_status_${auth.status}` };
     return { ok: true, models };
   } catch (err) {
     return { ok: false, error: err instanceof Error ? err.name : "network_error" };

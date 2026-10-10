@@ -83,6 +83,7 @@ export async function POST(
     : {
         validated_at: null,
         validation_error: result.error,
+        models_available: [],
       };
 
   const { data: updated, error: updErr } = await admin

@@ -42,6 +42,7 @@ interface Props {
   credential: CredentialRow;
   canWrite: boolean;
   usageCount: number;
+  referenceCount: number;
 }
 
 const STATUS_LABEL: Record<CredentialStatus, string> = {
@@ -60,7 +61,7 @@ const STATUS_VARIANT: Record<CredentialStatus, "default" | "secondary" | "destru
   inactive: "outline",
 };
 
-export function CredentialCard({ credential, canWrite, usageCount }: Props) {
+export function CredentialCard({ credential, canWrite, usageCount, referenceCount }: Props) {
   const t = useT();
   const router = useRouter();
   const qc = useQueryClient();
@@ -69,16 +70,25 @@ export function CredentialCard({ credential, canWrite, usageCount }: Props) {
 
   const status = credentialStatus(credential);
   const last4 = credential.api_key_last4 ?? "????";
-  const inUse = usageCount > 0;
+  const historicalCount = Math.max(0, referenceCount - usageCount);
+  const inUse = referenceCount > 0;
   const erro = descreverErroDeValidacao(credential.validation_error);
   const provedor = PROVEDORES.find((p) => p.id === credential.provider);
 
   const onRevalidate = () => {
     startTransition(async () => {
       try {
-        await apiClient.post(`/api/v1/ai/credentials/${credential.id}/revalidate`, {});
-        toast.success(t("Revalidando…"));
+        const response = await apiClient.post<{ data: CredentialRow }>(
+          `/api/v1/ai/credentials/${credential.id}/revalidate`,
+          {},
+          { timeoutMs: 15_000 },
+        );
+        qc.setQueryData<CredentialRow[]>(credentialsListQueryKey, (rows) =>
+          rows?.map((row) => row.id === credential.id ? response.data : row),
+        );
         await qc.invalidateQueries({ queryKey: credentialsListQueryKey });
+        if (response.data.validation_error) toast.error(t("Credencial inválida."));
+        else toast.success(t("Credencial validada."));
       } catch (err) {
         showApiError(err);
       }
@@ -163,8 +173,8 @@ export function CredentialCard({ credential, canWrite, usageCount }: Props) {
           <dd className="font-mono">{credential.models_available?.length ?? "—"}</dd>
         </div>
         <div>
-          <dt className="text-muted-foreground">{t("Em uso por")}</dt>
-          <dd className="font-mono">{usageCount}</dd>
+          <dt className="text-muted-foreground">{t("Referências")}</dt>
+          <dd>{usageCount} {t("agentes ativos")} · {historicalCount} {t("versões não ativas")}</dd>
         </div>
       </dl>
 
@@ -186,9 +196,7 @@ export function CredentialCard({ credential, canWrite, usageCount }: Props) {
                   <span tabIndex={0}>{deleteButton}</span>
                 </TooltipTrigger>
                 <TooltipContent>
-                  {t("Em uso por")} {usageCount} {t("agente")}
-                  {usageCount === 1 ? "" : "s"} {t("publicado")}
-                  {usageCount === 1 ? "" : "s"}.
+                  {t("Remova as versões referenciadas antes de excluir a credencial.")}
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>

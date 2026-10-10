@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { validateOpenRouterKey } from "@/lib/ai/provider-validators";
+import { validateAnthropicKey, validateOpenRouterKey } from "@/lib/ai/provider-validators";
 
 /**
  * POR QUE ESTE ARQUIVO EXISTE
@@ -34,6 +34,25 @@ function fetchFalso(respostas: Record<string, { status: number; body?: unknown }
 afterEach(() => {
   chamadas.length = 0;
   vi.unstubAllGlobals();
+});
+
+describe("validateAnthropicKey", () => {
+  it("recusa 401 da API de mensagens mesmo quando o catálogo responde 200", async () => {
+    vi.stubGlobal("fetch", fetchFalso({ "/v1/messages": { status: 401 }, "/v1/models": { status: 200, body: { data: [{ id: "claude-haiku-4-5" }] } } }));
+    expect(await validateAnthropicKey("sk-ant-invalida")).toEqual({ ok: false, error: "auth_failed_401" });
+    expect(chamadas).toEqual(["https://api.anthropic.com/v1/models", "https://api.anthropic.com/v1/messages"]);
+    expect(vi.mocked(fetch).mock.calls[1]?.[1]?.headers).toMatchObject({ "x-api-key": "sk-ant-invalida" });
+  });
+
+  it("aceita a chave quando a chamada real funciona", async () => {
+    vi.stubGlobal("fetch", fetchFalso({ "/v1/messages": { status: 200 }, "/v1/models": { status: 200, body: { data: [{ id: "claude-haiku-4-5" }] } } }));
+    expect(await validateAnthropicKey("sk-ant-valida")).toEqual({ ok: true, models: ["claude-haiku-4-5"] });
+  });
+
+  it("marca 403 da API de mensagens como inválida", async () => {
+    vi.stubGlobal("fetch", fetchFalso({ "/v1/messages": { status: 403 }, "/v1/models": { status: 200, body: { data: [{ id: "claude-haiku-4-5" }] } } }));
+    expect(await validateAnthropicKey("sk-ant-recusada")).toEqual({ ok: false, error: "auth_failed_401" });
+  });
 });
 
 describe("validateOpenRouterKey", () => {
