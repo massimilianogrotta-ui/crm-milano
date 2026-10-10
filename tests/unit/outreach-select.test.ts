@@ -49,8 +49,8 @@ describe("scegliProposte", () => {
     const troppoPresto: StoricoProposta = { ...inviato, createdAt: giorniFa(5), sentAt: giorniFa(5) };
     expect(scegliProposte([c], [troppoPresto], ORA)).toHaveLength(0);
   });
-  it("mai più di 20 per giro", () => {
+  it("mai più di 10 per giro", () => {
     const tanti = Array.from({ length: 50 }, (_, i) => cand({ leadId: `l${i}` }));
-    expect(scegliProposte(tanti, [], ORA)).toHaveLength(20);
+    expect(scegliProposte(tanti, [], ORA)).toHaveLength(10);
   });
 });
