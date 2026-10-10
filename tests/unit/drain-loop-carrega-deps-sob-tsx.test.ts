@@ -58,6 +58,8 @@ function importaSobTsx(modulo: string): { ok: boolean; saida: string } {
   }
 }
 
+// Cada caso sobe um processo tsx a frio: sob a suíte inteira passa dos 15 s padrão.
+// O teste acompanha o mesmo teto de 60 s já dado ao execFileSync.
 describe("o laço rápido do event_log carrega as dependências sob tsx", () => {
   it("CONTROLE: o tsx está no disco — sem isto, os casos abaixo passariam por não medir nada", () => {
     expect(existsSync(TSX)).toBe(true);
@@ -67,11 +69,11 @@ describe("o laço rápido do event_log carrega as dependências sob tsx", () => 
     it(`${modulo} resolve sob tsx`, () => {
       const r = importaSobTsx(modulo);
       expect(r.ok, `não resolveu sob tsx:\n${r.saida}`).toBe(true);
-    });
+    }, 60_000);
   }
 
   it(`${MODULO_TARDIO} resolve sob tsx (o import tardio do worker de LGPD)`, () => {
     const r = importaSobTsx(MODULO_TARDIO);
     expect(r.ok, `não resolveu sob tsx:\n${r.saida}`).toBe(true);
-  });
+  }, 60_000);
 });
