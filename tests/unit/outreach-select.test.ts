@@ -55,6 +55,19 @@ describe("scegliProposte", () => {
     expect(scegliProposte([cand({ stageSlug: "in-attesa", phone: "0212345678" })], [inviato], ORA, wa)).toHaveLength(0);
     expect(scegliProposte([c], [inviato], ORA, { waFollowup: false })).toHaveLength(0);
   });
+  it("un primo contatto rifiutato o approvato a metà non torna; uno fallito sì", () => {
+    const vecchio = (status: StoricoProposta["status"]): StoricoProposta =>
+      ({ leadId: "l1", kind: "first_contact", status, createdAt: giorniFa(30), sentAt: null, dryRun: false });
+    expect(scegliProposte([cand()], [vecchio("rejected")], ORA)).toHaveLength(0);
+    expect(scegliProposte([cand()], [vecchio("approved")], ORA)).toHaveLength(0);
+    expect(scegliProposte([cand()], [vecchio("failed")], ORA)[0]?.kind).toBe("first_contact");
+  });
+  it("un ricontatto di prova non blocca il sollecito WhatsApp vero", () => {
+    const c = cand({ stageSlug: "in-attesa" });
+    const inviato: StoricoProposta = { leadId: "l1", kind: "first_contact", status: "sent", createdAt: giorniFa(12), sentAt: giorniFa(11), dryRun: false };
+    const ricontattoProva: StoricoProposta = { leadId: "l1", kind: "followup", status: "sent", createdAt: giorniFa(20), sentAt: giorniFa(20), dryRun: true };
+    expect(scegliProposte([c], [inviato, ricontattoProva], ORA, wa)[0]?.kind).toBe("followup");
+  });
   it("mai più di 10 per giro", () => {
     const tanti = Array.from({ length: 50 }, (_, i) => cand({ leadId: `l${i}` }));
     expect(scegliProposte(tanti, [], ORA)).toHaveLength(10);

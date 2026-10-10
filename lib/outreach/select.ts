@@ -77,10 +77,13 @@ export function scegliProposte(
 
     let kind: OutreachKind | null = null;
     let reason = "";
-    if (c.stageSlug === STAGE_DA_CONTATTARE && !mie.some((s) => s.kind === "first_contact" && (s.status === "pending" || (s.status === "sent" && !s.dryRun)))) {
+    // Solo l'invio di prova e l'invio fallito liberano il lead: un «Rifiuta» di Max
+    // o un'approvazione rimasta a metà non devono far tornare la stessa proposta.
+    const diProva = (s: StoricoProposta) => s.status === "sent" && s.dryRun;
+    if (c.stageSlug === STAGE_DA_CONTATTARE && !mie.some((s) => s.kind === "first_contact" && !diProva(s) && s.status !== "failed")) {
       kind = "first_contact";
       reason = "Lead in «Da contattare» mai contattato";
-    } else if (waFollowup && c.stageSlug === STAGE_IN_ATTESA && cellulareItaliano(c.phone) && !mie.some((s) => s.kind === "followup")) {
+    } else if (waFollowup && c.stageSlug === STAGE_IN_ATTESA && cellulareItaliano(c.phone) && !mie.some((s) => s.kind === "followup" && !diProva(s))) {
       const inviato = mie.find((s) => s.kind === "first_contact" && s.status === "sent" && !s.dryRun && s.sentAt);
       if (inviato && ora.getTime() - Date.parse(inviato.sentAt!) >= waGiorni * GIORNO_MS) {
         kind = "followup";
