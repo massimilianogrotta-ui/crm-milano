@@ -10,6 +10,7 @@ import type { NextRequest } from "next/server";
 
 import { ok, fail } from "@/lib/api/wrappers";
 import { env } from "@/lib/env";
+import { logger } from "@/lib/logger";
 import { outreachOrgId } from "@/lib/outreach/config";
 import { generaProposte } from "@/lib/outreach/generate";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -37,6 +38,13 @@ export async function GET(req: NextRequest): Promise<Response> {
   );
   if (ora < 9 || ora >= 19) return ok({ stato: "fuori_orario" }, { requestId });
 
-  const esito = await generaProposte(createAdminClient(), orgId);
+  let esito;
+  try {
+    esito = await generaProposte(createAdminClient(), orgId);
+  } catch (e) {
+    const errore = e instanceof Error ? e.message : String(e);
+    logger.error("[outreach] giro interrotto da eccezione", { organization_id: orgId, error: errore, requestId });
+    return fail("internal_error", "Outreach run failed.", 500, { requestId });
+  }
   return ok(esito, { requestId });
 }
