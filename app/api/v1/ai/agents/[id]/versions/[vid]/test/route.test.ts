@@ -14,6 +14,7 @@ import { ROLE_RANK, type AuthUser, type Role } from "@/lib/auth/types";
 import { testAgentVersion } from "@/lib/agent-engine/agent/sandbox";
 import { requestTurnDeps } from "@/lib/agent-engine/agent/request-deps";
 import { getRequestPool } from "@/lib/agent-engine/db/request-pool";
+import { logger } from "@/lib/logger";
 
 vi.mock("@/lib/auth/require-role", () => ({ requireRole: vi.fn() }));
 vi.mock("@/lib/supabase/admin", () => ({ createAdminClient: vi.fn() }));
@@ -25,6 +26,7 @@ vi.mock("@/lib/agent-engine/agent/sandbox", () => ({
 }));
 vi.mock("@/lib/agent-engine/agent/request-deps", () => ({ requestTurnDeps: vi.fn() }));
 vi.mock("@/lib/agent-engine/db/request-pool", () => ({ getRequestPool: vi.fn() }));
+vi.mock("@/lib/logger", () => ({ logger: { error: vi.fn() } }));
 
 const ORG = "22222222-2222-4222-8222-222222222222";
 const USER = "11111111-1111-4111-8111-111111111111";
@@ -88,6 +90,7 @@ describe("POST .../versions/:vid/test — core compartilhado", () => {
 
   beforeEach(() => {
     atualizacoes.length = 0;
+    vi.mocked(logger.error).mockClear();
     const user: AuthUser = {
       id: USER,
       email: "a@example.com",
@@ -112,7 +115,7 @@ describe("POST .../versions/:vid/test — core compartilhado", () => {
     const req = new NextRequest("http://localhost/x", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ sample_message: "oi" }),
+      body: JSON.stringify({ sample_message: "mensagem privada de teste" }),
     });
 
     const res = await POST(req, { params: Promise.resolve({ id: AGENT, vid: VERSION }) });
@@ -126,25 +129,44 @@ describe("POST .../versions/:vid/test — core compartilhado", () => {
         agentId: AGENT,
         versionId: VERSION,
         runId: "run-1",
-        sampleMessage: "oi",
+        sampleMessage: "mensagem privada de teste",
       }),
     );
     expect(res.status).toBe(422);
     expect(body.error).toMatchObject({
       code: "preview_failed",
-      message: "Não foi possível executar o teste. Confira modelo, credencial e materiais do agente.",
+      message:
+        "Não foi possível executar o teste. Confira modelo, credencial e materiais do agente.",
     });
     expect(body.error?.message).not.toContain("AI_GATEWAY_API_KEY");
-    expect(atualizacoes).toContainEqual(expect.objectContaining({
-      status: "error",
-      error_code: "preview_failed",
-    }));
+    expect(logger.error).toHaveBeenCalledWith(
+      "ai-agent-test: execução do teste falhou",
+      expect.objectContaining({
+        organization_id: ORG,
+        request_id: expect.any(String),
+        agent_id: AGENT,
+        version_id: VERSION,
+        run_id: "run-1",
+        causa: "AI_GATEWAY_API_KEY ausente",
+        erro_nome: "Error",
+      }),
+    );
+    expect(JSON.stringify(vi.mocked(logger.error).mock.calls)).not.toContain(
+      "mensagem privada de teste",
+    );
+    expect(atualizacoes).toContainEqual(
+      expect.objectContaining({
+        status: "error",
+        error_code: "preview_failed",
+        error_message: "AI_GATEWAY_API_KEY ausente",
+      }),
+    );
   });
 });
 
 // Este teste isola o handler; autoridade de suporte é exercitada na suíte própria.
 vi.mock("@/lib/impersonate/support", async (importOriginal) => ({
-  ...await importOriginal<typeof import("@/lib/impersonate/support")>(),
+  ...(await importOriginal<typeof import("@/lib/impersonate/support")>()),
   requireSupportWrite: vi.fn(async () => null),
   authenticatedSessionId: vi.fn(async () => "f2200000-0000-4000-8000-000000000099"),
 }));
