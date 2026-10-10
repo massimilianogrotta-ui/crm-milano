@@ -7,6 +7,7 @@ import type { NextRequest } from "next/server";
 
 import { ok } from "@/lib/api/wrappers";
 import { createContact, listContacts } from "@/lib/account-manager/data";
+import { requireSupportWrite } from "@/lib/impersonate/support";
 import { readBody, readQuery, withAccountManager } from "@/lib/account-manager/guard";
 import { createContactBody, listContactsQuery } from "@/lib/account-manager/schemas";
 
@@ -22,6 +23,8 @@ export function GET(req: NextRequest): Promise<Response> {
 
 export function POST(req: NextRequest): Promise<Response> {
   return withAccountManager(req, "write", async (ctx) => {
+    const supportDenied = await requireSupportWrite();
+    if (supportDenied) return supportDenied;
     const body = await readBody(req, createContactBody, ctx.requestId);
     return ok(await createContact(ctx, body), { requestId: ctx.requestId, status: 201 });
   });
