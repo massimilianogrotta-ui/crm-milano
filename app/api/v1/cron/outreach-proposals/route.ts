@@ -12,6 +12,7 @@ import { ok, fail } from "@/lib/api/wrappers";
 import { env } from "@/lib/env";
 import { outreachOrgId } from "@/lib/outreach/config";
 import { generaProposte } from "@/lib/outreach/generate";
+import { bloccaOutreach } from "@/lib/outreach/lock";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
@@ -37,6 +38,14 @@ export async function GET(req: NextRequest): Promise<Response> {
   );
   if (ora < 9 || ora >= 19) return ok({ stato: "fuori_orario" }, { requestId });
 
-  const esito = await generaProposte(createAdminClient(), orgId);
-  return ok(esito, { requestId });
+  try {
+    const libera = await bloccaOutreach(orgId);
+    if (!libera) return ok({ stato: "occupato" }, { requestId });
+    try {
+      const esito = await generaProposte(createAdminClient(), orgId);
+      return ok(esito, { requestId });
+    } finally { await libera().catch(() => undefined); }
+  } catch {
+    return fail("internal_error", "Outreach lock unavailable.", 503, { requestId });
+  }
 }

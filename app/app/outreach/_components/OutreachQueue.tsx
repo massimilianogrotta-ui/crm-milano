@@ -23,6 +23,11 @@ const ERRO_EM_PORTUGUES: Record<string, string> = {
   not_found: "Proposta não encontrada.",
   validation_failed: "Confira os campos: algum valor não está no formato esperado.",
   non_pending: "Esta proposta já foi decidida.",
+  limite_giorno: "Limite diário de 10 envios reais atingido. Tente amanhã.",
+  outreach_busy: "Outra decisão está em andamento. Tente novamente em instantes.",
+  outreach_lock_unavailable: "Não foi possível verificar o limite de envios. Tente novamente.",
+  invalid_phone: "Número de celular italiano non valido.",
+  session_not_found: "Canale WhatsApp non disponibile.",
   send_failed: "Não consegui enviar o e-mail agora.",
   contatto_bloccato: "Contato bloqueado — envio de mensagens desabilitado.",
 };
@@ -30,6 +35,7 @@ const ERRO_EM_PORTUGUES: Record<string, string> = {
 export interface RigaCoda {
   id: string;
   status: string;
+  channel: "email" | "wa";
   kind: string;
   to_address: string;
   subject: string | null;
@@ -50,7 +56,7 @@ export function OutreachQueue({ righe }: { righe: RigaCoda[] }) {
   return (
     <div className="flex flex-col gap-8">
       <section className="flex flex-col gap-4">
-        {pending.length === 0 && <p className="text-sm text-muted-foreground">{t("Nenhum e-mail para aprovar.")}</p>}
+        {pending.length === 0 && <p className="text-sm text-muted-foreground">{t("Nenhuma mensagem para aprovar.")}</p>}
         {pending.map((r) => (
           <Scheda key={r.id} riga={r} />
         ))}
@@ -60,6 +66,7 @@ export function OutreachQueue({ righe }: { righe: RigaCoda[] }) {
         {storico.map((r) => (
           <div key={r.id} className="flex items-center gap-3 text-sm">
             <Badge variant="outline">{t(r.status === "sent" && r.dry_run ? "Teste" : r.status)}</Badge>
+            <Badge variant="secondary">{r.channel === "wa" ? "WhatsApp" : "Email"}</Badge>
             <span className="font-medium">{r.leadTitle}</span>
             <span className="text-muted-foreground">{r.subject}</span>
             {r.error && (
@@ -90,6 +97,7 @@ function Scheda({ riga }: { riga: RigaCoda }) {
       <div className="mb-2 flex items-center gap-2">
         <span className="font-medium">{riga.leadTitle}</span>
         <Badge variant="secondary">{t(riga.kind === "first_contact" ? "Primeiro contato" : "Follow-up")}</Badge>
+        <Badge variant="outline">{riga.channel === "wa" ? "WhatsApp" : "Email"}</Badge>
         <span className="text-sm text-muted-foreground">{riga.to_address}</span>
       </div>
       <p className="mb-2 text-xs text-muted-foreground">{riga.reason}</p>

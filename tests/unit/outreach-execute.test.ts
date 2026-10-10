@@ -4,12 +4,13 @@ import { eseguiDecisione, type DipendenzeEsecuzione, type PropostaDaEseguire } f
 
 const P: PropostaDaEseguire = {
   id: "p1", organizationId: "o1", leadId: "l1", contactId: "c1", kind: "first_contact",
-  status: "pending", toAddress: "info@x.it", subject: "S", body: "B", contactBlocked: false,
+  channel: "email", status: "pending", toAddress: "info@x.it", subject: "S", body: "B", contactBlocked: false,
 };
 
 function deps(over: Partial<DipendenzeEsecuzione> = {}): DipendenzeEsecuzione {
   return {
     dryRun: false,
+    contaInviiVeri: vi.fn(async () => 0),
     send: vi.fn(async () => ({ ok: true, id: "re_1" })),
     salva: vi.fn(async () => true),
     spostaInAttesa: vi.fn(async () => "movido" as const),
@@ -26,13 +27,13 @@ describe("eseguiDecisione", () => {
     expect(d.send).not.toHaveBeenCalled();
     expect(d.spostaInAttesa).not.toHaveBeenCalled();
   });
-  it("dry-run: nessun invio ma sent+sposta+nota", async () => {
+  it("dry-run: nessun invio e nessuno spostamento", async () => {
     const d = deps({ dryRun: true });
     const r = await eseguiDecisione(P, { azione: "approva", userId: "u1" }, d);
     expect(d.send).not.toHaveBeenCalled();
     expect(r.status).toBe("sent");
     expect(d.salva).toHaveBeenCalledWith(expect.objectContaining({ status: "sent", dry_run: true }));
-    expect(d.spostaInAttesa).toHaveBeenCalled();
+    expect(d.spostaInAttesa).not.toHaveBeenCalled();
     expect(d.nota).toHaveBeenCalled();
   });
   it("invio reale ok", async () => {
@@ -41,6 +42,12 @@ describe("eseguiDecisione", () => {
     expect(d.send).toHaveBeenCalledWith(expect.objectContaining({ to: "info@x.it", subject: "S" }));
     expect(r.status).toBe("sent");
     expect(d.salva).toHaveBeenCalledWith(expect.objectContaining({ provider_message_id: "re_1", dry_run: false }));
+  });
+  it("rifiuta l'undicesimo invio vero senza decidere la proposta", async () => {
+    const d = deps({ contaInviiVeri: vi.fn(async () => 10) });
+    expect(await eseguiDecisione(P, { azione: "approva", userId: "u1" }, d)).toMatchObject({ status: "limite_giorno" });
+    expect(d.send).not.toHaveBeenCalled();
+    expect(d.salva).not.toHaveBeenCalled();
   });
   it("invio fallito: failed, niente spostamento", async () => {
     const d = deps({ send: vi.fn(async () => ({ ok: false, error: "send_failed" as const })) });

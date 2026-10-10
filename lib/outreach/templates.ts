@@ -60,16 +60,16 @@ export function renderOutreach(input: {
   }
 
   return {
-    templateRef,
-    subject: "Demo 10 min All-io — la ricontatto",
+    templateRef: `wa.${templateRef}`,
+    subject: "Sollecito WhatsApp",
     body: [
       "Buongiorno,",
-      `le avevo scritto la settimana scorsa per una demo di 10 minuti su agenda e ritorni dei ${c.pazienti}.`,
-      "Se non è il momento nessun problema: mi basta un sì o un no.",
+      `Le avevo scritto per mostrarLe una breve demo su agenda e ritorni dei ${c.pazienti}.`,
+      "Se desidera, può vederla qui: https://demo-mini.all-io.com",
       "",
-      `Demo: ${CTA_DEMO} · WhatsApp: ${CTA_WA}`,
+      "Se non desidera altri messaggi, può rispondere STOP.",
       "",
-      footer(nome, c.luogo),
+      "— Max · All-io · Milano",
     ].join("\n"),
   };
 }

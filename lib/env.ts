@@ -263,6 +263,10 @@ const schema = z.object({
   OUTREACH_DRY_RUN: z.string().optional(),
   /** Org su cui gira il worker outreach. Vuota = worker spento. */
   OUTREACH_ORG_ID: z.string().optional().default(""),
+  OUTREACH_FROM_EMAIL: z.union([z.literal(""), z.email()]).optional().default(""),
+  OUTREACH_REPLY_TO: z.union([z.literal(""), z.email()]).optional().default(""),
+  OUTREACH_WA_FOLLOWUP: z.string().optional().default(""),
+  OUTREACH_WA_FOLLOWUP_GIORNI: z.coerce.number().int().positive().optional().default(10),
 
   /**
    * E-mail de suporte que a instalação mostra ao CLIENTE FINAL (tela de conta
