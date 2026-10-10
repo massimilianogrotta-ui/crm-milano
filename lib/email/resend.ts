@@ -40,6 +40,7 @@ interface SendArgs {
    * Ausente usa o endereço puro: quem não passa marca não ganha a nossa.
    */
   fromName?: string;
+  fromEmail?: string;
 }
 
 interface SendResult {
@@ -66,8 +67,8 @@ function getClient(): Resend | null {
  * cabeçalho `From:` são injeção de cabeçalho SMTP, e a marca vem de um campo
  * que o operador digita numa tela.
  */
-export function fromAddress(fromName?: string): string | null {
-  const endereco = env.RESEND_FROM_EMAIL.trim();
+export function fromAddress(fromName?: string, fromEmail?: string): string | null {
+  const endereco = (fromEmail ?? env.RESEND_FROM_EMAIL).trim();
   if (endereco.length === 0) return null;
   const nome = (fromName ?? "").replace(/[<>"\r\n]/g, "").trim();
   return nome.length > 0 ? `${nome} <${endereco}>` : endereco;
@@ -89,7 +90,7 @@ function classificar(nome: string, mensagem: string): NonNullable<SendResult["er
 
 export async function sendEmail(args: SendArgs): Promise<SendResult> {
   const client = getClient();
-  const from = fromAddress(args.fromName);
+  const from = fromAddress(args.fromName, args.fromEmail);
 
   if (!client || !from) {
     if (process.env.NODE_ENV !== "production") {

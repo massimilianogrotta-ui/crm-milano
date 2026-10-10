@@ -1,7 +1,8 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { logger } from "@/lib/logger";
-import { isOutreachDryRun, OUTREACH_PIPELINE_SLUG, STAGE_DA_CONTATTARE, STAGE_IN_ATTESA } from "@/lib/outreach/config";
+import { isOutreachDryRun, OUTREACH_MAX_GIORNO, OUTREACH_PIPELINE_SLUG, STAGE_DA_CONTATTARE, STAGE_IN_ATTESA } from "@/lib/outreach/config";
+import { giornataRoma } from "@/lib/outreach/day";
 import { scegliProposte, type Candidato, type StoricoProposta } from "@/lib/outreach/select";
 
 export interface EsitoGenerazione {
@@ -39,20 +40,35 @@ export async function generaProposte(admin: SupabaseClient, orgId: string, ora =
   const slugPerId = new Map((stages ?? []).map((s) => [s.id as string, s.slug as string]));
   if (slugPerId.size === 0) return { stato: "pipeline_assente", candidati: 0, create: 0 };
 
+  const { inizio, fine } = giornataRoma(ora);
+  const [giorno, pendenti] = await Promise.all([
+    admin.from("outreach_proposals").select("id", { count: "exact", head: true })
+      .eq("organization_id", orgId).gte("created_at", inizio).lt("created_at", fine),
+    admin.from("outreach_proposals").select("id", { count: "exact", head: true })
+      .eq("organization_id", orgId).eq("status", "pending"),
+  ]);
+  if (giorno.error || pendenti.error || giorno.count === null || pendenti.count === null) {
+    return errore("limite", giorno.error?.message ?? pendenti.error?.message ?? "count_failed");
+  }
+  const spazio = Math.max(0, Math.min(OUTREACH_MAX_GIORNO - giorno.count, OUTREACH_MAX_GIORNO - pendenti.count));
+  if (spazio === 0) return { stato: "ok", candidati: 0, create: 0 };
+
   const { data: leads, error: eLeads } = await admin
     .from("crm_leads")
-    .select("id, title, tags, stage_id, contact_id, contacts(email, is_blocked)")
+    .select("id, title, tags, stage_id, contact_id, contacts!inner(email, phone_number, is_blocked)")
     .eq("organization_id", orgId)
     .eq("pipeline_id", pipeline.id)
     .eq("status", "open")
     .in("stage_id", [...slugPerId.keys()])
+    .not("contacts.email", "is", null)
+    .eq("contacts.is_blocked", false)
     .order("created_at", { ascending: true })
     .limit(500);
   if (eLeads) return errore("leads", eLeads.message);
 
   const candidati: Candidato[] = (leads ?? []).map((l) => {
     const contatto = (Array.isArray(l.contacts) ? l.contacts[0] : l.contacts) as
-      | { email: string | null; is_blocked: boolean }
+      | { email: string | null; phone_number: string | null; is_blocked: boolean }
       | null;
     return {
       leadId: l.id as string,
@@ -60,6 +76,7 @@ export async function generaProposte(admin: SupabaseClient, orgId: string, ora =
       title: (l.title as string | null) ?? null,
       tags: (l.tags as string[] | null) ?? [],
       email: contatto?.email ?? null,
+      phone: contatto?.phone_number ?? null,
       // Senza contatto non sappiamo se è bloccato: trattalo come bloccato.
       isBlocked: contatto ? contatto.is_blocked : true,
       stageSlug: slugPerId.get(l.stage_id as string) ?? "",
@@ -71,9 +88,8 @@ export async function generaProposte(admin: SupabaseClient, orgId: string, ora =
   for (let i = 0; i < candidati.length; i += BLOCCO_STORICO) {
     const { data: storicoRows, error: eStorico } = await admin
       .from("outreach_proposals")
-      .select("lead_id, kind, status, created_at, sent_at")
+      .select("lead_id, kind, status, created_at, sent_at, dry_run")
       .eq("organization_id", orgId)
-      .eq("channel", "email")
       .in("lead_id", candidati.slice(i, i + BLOCCO_STORICO).map((c) => c.leadId));
     if (eStorico) return errore("storico", eStorico.message, candidati.length);
     storico.push(...(storicoRows ?? []).map((s) => ({
@@ -82,6 +98,7 @@ export async function generaProposte(admin: SupabaseClient, orgId: string, ora =
       status: s.status as StoricoProposta["status"],
       createdAt: s.created_at as string,
       sentAt: (s.sent_at as string | null) ?? null,
+      dryRun: s.dry_run as boolean,
     })));
   }
 
@@ -97,14 +114,14 @@ export async function generaProposte(admin: SupabaseClient, orgId: string, ora =
   // solo chi entra davvero.
   const dryRun = isOutreachDryRun();
   const create: string[] = [];
-  for (const n of nuove) {
+  for (const n of nuove.slice(0, spazio)) {
     const { data: riga, error: eIns } = await admin
       .from("outreach_proposals")
       .insert({
         organization_id: orgId,
         lead_id: n.leadId,
         contact_id: n.contactId,
-        channel: "email",
+        channel: n.channel,
         kind: n.kind,
         template_ref: n.templateRef,
         to_address: n.toAddress,

@@ -25,7 +25,7 @@ export default async function OutreachPage() {
   const supabase = await createClient();
   const { data } = await supabase
     .from("outreach_proposals")
-    .select("id, status, kind, to_address, subject, body, reason, dry_run, created_at, decided_at, error, crm_leads(title)")
+    .select("id, status, channel, kind, to_address, subject, body, reason, dry_run, created_at, decided_at, error, crm_leads(title)")
     .eq("organization_id", activeOrg.orgId)
     .order("created_at", { ascending: false })
     .limit(100);
@@ -40,11 +40,11 @@ export default async function OutreachPage() {
       <header>
         <h1 className="text-2xl font-semibold tracking-tight">{t("Para aprovar")}</h1>
         <p className="text-sm text-muted-foreground">
-          {t("O agente prepara os e-mails; nada sai sem a sua aprovação.")}
+          {t("O agente prepara e-mails e mensagens WhatsApp; nada sai sem a sua aprovação.")}
         </p>
         {isOutreachDryRun() && (
           <p className="mt-2 text-sm font-medium text-amber-600">
-            {t("Modo de teste: aprovar não envia nenhum e-mail de verdade.")}
+            {t("Modo de teste: aprovar não envia nenhuma mensagem de verdade.")}
           </p>
         )}
       </header>

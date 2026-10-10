@@ -1,4 +1,5 @@
 import type { OutreachKind } from "@/lib/outreach/templates";
+import { OUTREACH_MAX_GIORNO } from "@/lib/outreach/config";
 
 export interface PropostaDaEseguire {
   id: string;
@@ -6,6 +7,7 @@ export interface PropostaDaEseguire {
   leadId: string;
   contactId: string | null;
   kind: OutreachKind;
+  channel: "email" | "wa";
   status: string;
   toAddress: string;
   subject: string | null;
@@ -16,6 +18,7 @@ export interface PropostaDaEseguire {
 export interface DipendenzeEsecuzione {
   dryRun: boolean;
   send: (args: { to: string; subject: string; text: string; html: string }) => Promise<{ ok: boolean; id?: string; error?: string }>;
+  contaInviiVeri: () => Promise<number>;
   /**
    * Aggiorna la proposta SOLO se lo stato atteso corrisponde (trava ottimista).
    * Ritorna false se un altro utente l'ha già decisa.
@@ -35,7 +38,7 @@ export async function eseguiDecisione(
   p: PropostaDaEseguire,
   d: Decisione,
   deps: DipendenzeEsecuzione,
-): Promise<{ status: "rejected" | "sent" | "failed" | "non_pending"; errore?: string }> {
+): Promise<{ status: "rejected" | "sent" | "failed" | "non_pending" | "limite_giorno"; errore?: string }> {
   if (p.status !== "pending") return { status: "non_pending" };
   const ora = new Date().toISOString();
 
@@ -49,6 +52,8 @@ export async function eseguiDecisione(
     });
     return ok ? { status: "rejected" } : { status: "non_pending" };
   }
+
+  if (!deps.dryRun && await deps.contaInviiVeri() >= OUTREACH_MAX_GIORNO) return { status: "limite_giorno" };
 
   // Blocca la proposta prima di inviare: due clic non producono due email.
   const preso = await deps.salva({ expectStatus: "pending", status: "approved", decided_by: d.userId, decided_at: ora, dry_run: deps.dryRun });
@@ -76,12 +81,12 @@ export async function eseguiDecisione(
     provider_message_id: providerId,
     dry_run: deps.dryRun,
   });
-  if (p.kind === "first_contact") await deps.spostaInAttesa();
+  if (p.kind === "first_contact" && !deps.dryRun) await deps.spostaInAttesa();
   const etichetta = p.kind === "first_contact" ? "Primo contatto" : "Ricontatto";
   await deps.nota(
     deps.dryRun
-      ? `${etichetta} email approvato (modalità prova: nessun invio reale). Oggetto: ${p.subject ?? ""}`
-      : `${etichetta} email inviato. Oggetto: ${p.subject ?? ""}`,
+      ? `${etichetta} ${p.channel} approvato (modalità prova: nessun invio reale). Oggetto: ${p.subject ?? ""}`
+      : `${etichetta} ${p.channel} inviato. Oggetto: ${p.subject ?? ""}`,
   );
   return { status: "sent" };
 }

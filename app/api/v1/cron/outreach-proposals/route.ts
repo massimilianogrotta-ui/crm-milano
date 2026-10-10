@@ -13,6 +13,7 @@ import { env } from "@/lib/env";
 import { logger } from "@/lib/logger";
 import { outreachOrgId } from "@/lib/outreach/config";
 import { generaProposte } from "@/lib/outreach/generate";
+import { bloccaOutreach } from "@/lib/outreach/lock";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
@@ -38,13 +39,18 @@ export async function GET(req: NextRequest): Promise<Response> {
   );
   if (ora < 9 || ora >= 19) return ok({ stato: "fuori_orario" }, { requestId });
 
-  let esito;
   try {
-    esito = await generaProposte(createAdminClient(), orgId);
-  } catch (e) {
-    const errore = e instanceof Error ? e.message : String(e);
-    logger.error("[outreach] giro interrotto da eccezione", { organization_id: orgId, error: errore, requestId });
-    return fail("internal_error", "Outreach run failed.", 500, { requestId });
+    const libera = await bloccaOutreach(orgId);
+    if (!libera) return ok({ stato: "occupato" }, { requestId });
+    try {
+      const esito = await generaProposte(createAdminClient(), orgId);
+      return ok(esito, { requestId });
+    } catch (e) {
+      const errore = e instanceof Error ? e.message : String(e);
+      logger.error("[outreach] giro interrotto da eccezione", { organization_id: orgId, error: errore, requestId });
+      return fail("internal_error", "Outreach run failed.", 500, { requestId });
+    } finally { await libera().catch(() => undefined); }
+  } catch {
+    return fail("internal_error", "Outreach lock unavailable.", 503, { requestId });
   }
-  return ok(esito, { requestId });
 }

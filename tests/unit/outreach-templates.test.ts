@@ -17,6 +17,14 @@ describe("segmentoDelLead", () => {
 });
 
 describe("renderOutreach", () => {
+  it("sollecito WhatsApp usa il Lei, demo e uscita STOP", () => {
+    const r = renderOutreach({ kind: "followup", segmento: "dentista", nomeStudio: "Studio Bianchi" });
+    expect(r.templateRef).toBe("wa.followup.dentista.v2");
+    expect(r.body).toContain("Le avevo scritto");
+    expect(r.body).toContain("https://demo-mini.all-io.com");
+    expect(r.body).toContain("rispondere STOP");
+    expect(r.body).not.toContain("Costo");
+  });
   it("mette il nome dello studio e il footer STOP", () => {
     const r = renderOutreach({ kind: "first_contact", segmento: "dentista", nomeStudio: "Studio Bianchi" });
     expect(r.templateRef).toBe("first_contact.dentista.v2");
