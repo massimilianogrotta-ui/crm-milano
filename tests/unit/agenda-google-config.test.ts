@@ -19,6 +19,13 @@
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+vi.mock("@/lib/supabase/admin", () => ({
+  createAdminClient: () => ({
+    from: () => ({ select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: null, error: null }) }) }) }),
+  }),
+}));
+vi.mock("@/lib/webhooks/secrets", () => ({ decryptWebhookSecret: vi.fn() }));
+
 const ORIGINAL = { ...process.env };
 
 async function importarComEnv(vars: Record<string, string>) {
@@ -35,6 +42,7 @@ beforeEach(() => {
 afterEach(() => {
   process.env = { ...ORIGINAL };
   vi.resetModules();
+  globalThis.__memoDoAppDoGoogle = null;
 });
 
 const COMPLETO = {

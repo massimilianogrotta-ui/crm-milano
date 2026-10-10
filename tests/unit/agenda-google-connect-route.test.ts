@@ -16,6 +16,12 @@ import type { ActiveOrg, AuthUser } from "@/lib/auth/types";
 
 vi.mock("@/lib/auth/require-role", () => ({ requireRole: vi.fn() }));
 vi.mock("@/lib/audit", () => ({ audit: vi.fn(async () => undefined), isServiceRoleConfigured: vi.fn(() => true) }));
+vi.mock("@/lib/supabase/admin", () => ({
+  createAdminClient: () => ({
+    from: () => ({ select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: null, error: null }) }) }) }),
+  }),
+}));
+vi.mock("@/lib/webhooks/secrets", () => ({ decryptWebhookSecret: vi.fn() }));
 
 const ORG = "22222222-2222-4222-8222-222222222222";
 const ANA = "11111111-1111-4111-8111-111111111111";
@@ -54,6 +60,7 @@ const CONFIGURADO = {
 };
 
 beforeEach(() => {
+  globalThis.__memoDoAppDoGoogle = null;
   vi.mocked(requireRole).mockResolvedValue({ ok: true, user: usuario, org: orgAtiva });
   vi.mocked(audit).mockClear();
 });
@@ -135,8 +142,7 @@ describe("GET /api/v1/agenda/google/connect", () => {
 });
 
 // Este teste isola o handler; autoridade de suporte é exercitada na suíte própria.
-vi.mock("@/lib/impersonate/support", async (importOriginal) => ({
-  ...await importOriginal<typeof import("@/lib/impersonate/support")>(),
+vi.mock("@/lib/impersonate/support", () => ({
   requireSupportWrite: vi.fn(async () => null),
   authenticatedSessionId: vi.fn(async () => "f2200000-0000-4000-8000-000000000099"),
 }));
