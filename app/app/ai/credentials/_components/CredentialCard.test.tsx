@@ -30,11 +30,11 @@ export function credencial(extra: Partial<CredentialRow> = {}): CredentialRow {
   };
 }
 
-export function montar(row: CredentialRow, props: { canWrite?: boolean; usageCount?: number } = {}) {
+export function montar(row: CredentialRow, props: { canWrite?: boolean; usageCount?: number; referenceCount?: number } = {}) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
     <QueryClientProvider client={client}>
-      <CredentialCard credential={row} canWrite={props.canWrite ?? true} usageCount={props.usageCount ?? 0} />
+      <CredentialCard credential={row} canWrite={props.canWrite ?? true} usageCount={props.usageCount ?? 0} referenceCount={props.referenceCount ?? 0} />
     </QueryClientProvider>,
   );
 }
@@ -50,6 +50,12 @@ describe("CredentialCard — modelos", () => {
     montar(credencial({ models_available: null }));
     expect(screen.getByText("—")).toBeInTheDocument();
   });
+});
+
+it("mostra le versioni non attive e blocca l'eliminazione", () => {
+  montar(credencial(), { usageCount: 0, referenceCount: 2 });
+  expect(screen.getByText(/0 agentes ativos · 2 versões não ativas/)).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Excluir credencial" })).toBeDisabled();
 });
 
 describe("CredentialCard — erro de validação", () => {

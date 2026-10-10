@@ -1,7 +1,6 @@
 /**
- * A REGRA de "credencial em uso": referenciada pela versão PUBLICADA de um
- * agente não arquivado. Rascunho não conta (o operador pode trocar a chave do
- * rascunho antes de publicar); arquivado não conta.
+ * Uso ativo: versão publicada de agente não arquivado. A FK de exclusão é mais
+ * abrangente: conta toda versão com `contarReferencias`.
  *
  * Consumida pela tela (`app/app/ai/credentials/page.tsx`) e pelo
  * `DELETE /api/v1/ai/credentials/:id`. Enquanto eram duas cópias, divergiram.
@@ -26,5 +25,12 @@ export function contarUsoPublicado(linhas: VersaoVinculada[]): Record<string, nu
     if (agente.published_version_id !== linha.id) continue;
     mapa[linha.credential_id] = (mapa[linha.credential_id] ?? 0) + 1;
   }
+  return mapa;
+}
+
+/** A FK protege toda versão, inclusive rascunhos e histórico de agentes arquivados. */
+export function contarReferencias(linhas: Pick<VersaoVinculada, "credential_id">[]): Record<string, number> {
+  const mapa: Record<string, number> = {};
+  for (const linha of linhas) mapa[linha.credential_id] = (mapa[linha.credential_id] ?? 0) + 1;
   return mapa;
 }
