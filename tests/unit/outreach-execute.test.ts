@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { eseguiDecisione, type DipendenzeEsecuzione, type PropostaDaEseguire } from "@/lib/outreach/execute";
+import { eseguiDecisione, testoInHtml, type DipendenzeEsecuzione, type PropostaDaEseguire } from "@/lib/outreach/execute";
 
 const P: PropostaDaEseguire = {
   id: "p1", organizationId: "o1", leadId: "l1", contactId: "c1", kind: "first_contact",
@@ -78,5 +78,27 @@ describe("eseguiDecisione", () => {
     const r = await eseguiDecisione(P, { azione: "approva", userId: "u1" }, d);
     expect(r.status).toBe("non_pending");
     expect(d.send).not.toHaveBeenCalled();
+  });
+});
+
+describe("testoInHtml", () => {
+  it("righe vuote = paragrafi, a capo singoli = <br>", () => {
+    const html = testoInHtml("Buongiorno,\r\n\r\nriga 1\nriga 2\n\n\nMax\nAll-io\n\nRispondi STOP <qui> & basta");
+    expect(html).toBe(
+      '<div style="font-family:sans-serif">'
+      + '<p style="margin:0 0 1em">Buongiorno,</p>'
+      + '<p style="margin:0 0 1em">riga 1<br>riga 2</p>'
+      + '<p style="margin:0 0 1em">Max<br>All-io</p>'
+      + '<p style="margin:0 0 1em">Rispondi STOP &lt;qui&gt; &amp; basta</p>'
+      + "</div>",
+    );
+  });
+  it("invio reale usa l'html a paragrafi", async () => {
+    const d = deps();
+    await eseguiDecisione({ ...P, body: "a\n\nb" }, { azione: "approva", userId: "u1" }, d);
+    expect(d.send).toHaveBeenCalledWith(expect.objectContaining({
+      text: "a\n\nb",
+      html: '<div style="font-family:sans-serif"><p style="margin:0 0 1em">a</p><p style="margin:0 0 1em">b</p></div>',
+    }));
   });
 });

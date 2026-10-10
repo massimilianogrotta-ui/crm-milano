@@ -34,6 +34,20 @@ function escapeHtml(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
+/**
+ * Testo semplice → html con paragrafi e <br>. Alcuni client (es. Spark) ignorano
+ * white-space:pre-line e mostrano tutto in un blocco unico.
+ */
+export function testoInHtml(body: string): string {
+  const paragrafi = body
+    .replace(/\r\n?/g, "\n")
+    .trim()
+    .split(/\n\s*\n/)
+    .map((par) => `<p style="margin:0 0 1em">${escapeHtml(par.trim()).replace(/\n/g, "<br>")}</p>`)
+    .join("");
+  return `<div style="font-family:sans-serif">${paragrafi}</div>`;
+}
+
 export async function eseguiDecisione(
   p: PropostaDaEseguire,
   d: Decisione,
@@ -65,7 +79,7 @@ export async function eseguiDecisione(
       to: p.toAddress,
       subject: p.subject ?? "",
       text: p.body,
-      html: `<div style="white-space:pre-line;font-family:sans-serif">${escapeHtml(p.body)}</div>`,
+      html: testoInHtml(p.body),
     });
     if (!r.ok) {
       await deps.salva({ expectStatus: "approved", status: "failed", error: r.error ?? "send_failed" });
