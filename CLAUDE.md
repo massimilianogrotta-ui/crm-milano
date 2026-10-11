@@ -516,3 +516,7 @@ Antes de declarar uma task pronta:
     aqui, e por quem revisa.
 
 Um staff engineer aprovaria? Se não, itera.
+
+<!-- DEF:start -->
+Questo progetto è gestito con DEF: il suo piano e il suo avanzamento stanno in /Users/Max/DEF/Planning/_active/crm-allio-agent.
+<!-- DEF:end -->
