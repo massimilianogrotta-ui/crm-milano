@@ -4,6 +4,7 @@ import { createClient } from "@supabase/supabase-js";
 import { expect, test, type Page } from "@playwright/test";
 
 import { credenciaisSupabaseDeTeste } from "../../scripts/lib/env-de-teste";
+import { nellaFinestraOutreachRoma } from "../../lib/outreach/day";
 
 const credentials = credenciaisSupabaseDeTeste();
 if (process.env.OUTREACH_DRY_RUN === "false") {
@@ -89,6 +90,17 @@ test("bozza WhatsApp: isolamento tra org e approvazione dry-run con nota", async
     await page.screenshot({ path: `${evidence}/pending.png`, fullPage: true });
 
     await own.getByRole("button", { name: "Aprovar" }).click();
+    if (!nellaFinestraOutreachRoma(new Date())) {
+      // Fuori dalle 09-19 Roma l'approvazione è rifiutata e la bozza resta in coda.
+      await expect(page.getByText("Fora do horário de envio", { exact: false }).first()).toBeVisible();
+      await page.screenshot({ path: `${evidence}/fuori-orario.png`, fullPage: true });
+      const { data: pend, error: pendError } = await db.from("outreach_proposals")
+        .select("status").eq("organization_id", orgs[0]);
+      if (pendError) throw pendError;
+      expect(pend).toHaveLength(1);
+      expect(pend![0]!.status).toBe("pending");
+      return;
+    }
     await expect(page.getByText("Teste", { exact: true })).toBeVisible();
     await page.screenshot({ path: `${evidence}/approved-dry-run.png`, fullPage: true });
 
