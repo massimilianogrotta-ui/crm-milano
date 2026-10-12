@@ -143,3 +143,8 @@ backups/
 # commit posterior de remoção não tira o blob.
 .qa-backups/
 *.dump
+
+# file locali non da versionare (igiene pezzo 7, 2026-10-12)
+forensic-out/
+prompts/CRM-ALLIO-AGENT-SPEC.md
+scripts/import-milano-leads-*.ts
