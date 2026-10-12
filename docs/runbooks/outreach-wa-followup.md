@@ -17,11 +17,9 @@ Stato: canale spento per default; il codice di proposta e approvazione è già p
 
 Il cron crea proposte soltanto tra le **09:00 e le 19:00, ora di Roma**. Il
 limite di **10 invii veri per giorno di Roma** e il lock Redis per organizzazione
-proteggono l'approvazione quando il dry-run è disattivato. **Attenzione:** la
-server action di approvazione non applica oggi la fascia 09:00–19:00; la fascia
-è un vincolo del cron di generazione, non una garanzia sugli invii approvati
-manualmente. Prima di autorizzare invii veri, serve una decisione sul guard di
-orario nell'azione di approvazione. In assenza di Redis valido l'azione reale
-fallisce chiusa.
+proteggono l'approvazione quando il dry-run è disattivato. Anche l'approvazione
+di un follow-up WhatsApp ricontrolla la fascia 09:00–19:00: fuori orario la
+bozza resta `pending` e l'azione restituisce `fuori_orario`. In assenza di Redis
+valido l'azione reale fallisce chiusa.
 
 Nessun passo di questo runbook autorizza deploy, accesso VPS o invio reale.

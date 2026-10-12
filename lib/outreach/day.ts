@@ -1,4 +1,11 @@
 /** Confini UTC della giornata civile Europe/Rome, compreso il cambio d'ora. */
+export function nellaFinestraOutreachRoma(ora: Date): boolean {
+  const oraLocale = Number(new Intl.DateTimeFormat("it-IT", {
+    hour: "2-digit", hour12: false, timeZone: "Europe/Rome",
+  }).format(ora));
+  return oraLocale >= 9 && oraLocale < 19;
+}
+
 export function giornataRoma(ora: Date): { inizio: string; fine: string } {
   const f = new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Rome", year: "numeric", month: "2-digit", day: "2-digit" });
   const parts = Object.fromEntries(f.formatToParts(ora).map((p) => [p.type, p.value]));
