@@ -1978,6 +1978,18 @@ Testes: `tests/e2e/agenda-google-meet.spec.ts`, `tests/invariants/agenda-meet.te
 - Provas Task9 em preparação: `tests/invariants/autonomia-replies.test.ts`, `lib/agent-engine/agent/preview.test.ts`. Evidência browser será registrada após revisão e aplicação da migration0227 no QA.
 
 
+## Outreach WA — collaudo locale 2026-10-12
+
+`tests/e2e/outreach-wa-approval.spec.ts` prova la coda **Da approvare** con due
+organizzazioni fittizie sul baseline locale: badge WhatsApp, isolamento della
+coda, approvazione con `OUTREACH_DRY_RUN=true`, stato di test e nota sul lead.
+Le catture previste sono pending.png e approved-dry-run.png nella directory
+`.superpowers/evidence/outreach-wa/`; non sono ancora prove prodotte. Il runbook
+è in `docs/runbooks/outreach-wa-followup.md`.
+La fascia 09:00–19:00 è controllata dal cron che genera le bozze; l'azione di
+approvazione non la ricontrolla. La prova browser resta da eseguire finché il
+database locale e il build non sono disponibili.
+
 ## Comunidade 360 — aceite integrado de 2026-09-06
 
 Produto `7f1d0f3e`, integrado à main `ca895850`: as dez specs de organizações, suporte, interface por vínculo, encerramento, Central, presença/recuperação, Calendar, Meet, autonomia assistida e roteamento passaram juntas: **22 casos em 3,7 minutos**. A execução usa build de produção `F0cVqvOg8JuwVlWss4ijk`, banco QA local e receivers HTTP controlados; não comprova OAuth externo, WhatsApp pareado ou qualidade de modelo externo.

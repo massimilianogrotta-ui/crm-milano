@@ -27,6 +27,7 @@ const ERRO_EM_PORTUGUES: Record<string, string> = {
   outreach_busy: "Outra decisão está em andamento. Tente novamente em instantes.",
   outreach_lock_unavailable: "Não foi possível verificar o limite de envios. Tente novamente.",
   invalid_phone: "Número de celular italiano non valido.",
+  fuori_orario: "Fora do horário de envio (09–19, hora de Roma). Aprove dentro da janela.",
   session_not_found: "Canale WhatsApp non disponibile.",
   send_failed: "Não consegui enviar o e-mail agora.",
   contatto_bloccato: "Contato bloqueado — envio de mensagens desabilitado.",
