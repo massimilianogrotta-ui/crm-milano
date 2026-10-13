@@ -628,7 +628,12 @@ jobs:
         run: |
           mv supabase/migrations /tmp/migrations-off
           mkdir -p supabase/migrations
+          # O config.toml do repo serve o kit de deploy (portas 5542x, realtime
+          # desligado). No CI o realtime precisa existir: liga só aqui.
+          sed -i '/^\[realtime\]/,/^\[/ s/^enabled = false/enabled = true/' supabase/config.toml
           supabase start
+          # A porta do Postgres vem do config.toml: lê do próprio stack, nunca fixa.
+          echo "SB_DB_URL=$(supabase status -o env | grep '^DB_URL=' | cut -d'"' -f2)" >> "$GITHUB_ENV"
 
       # O baseline é um dump `--schema-only`: ele USA os tipos das extensões
       # (public.vector, citext, gin_trgm_ops) mas não as cria. O stack local do
@@ -637,7 +642,7 @@ jobs:
       # (roles e schema auth já vêm prontos aqui).
       - name: Habilitar extensões exigidas pelo baseline
         run: |
-          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -v ON_ERROR_STOP=1 -q <<'SQL'
+          psql "$SB_DB_URL" -v ON_ERROR_STOP=1 -q <<'SQL'
           create schema if not exists extensions;
           create extension if not exists "uuid-ossp" with schema extensions;
           create extension if not exists pgcrypto with schema extensions;
@@ -648,7 +653,7 @@ jobs:
 
       - name: Aplicar o baseline.sql (o mesmo que o install.sh do kit aplica)
         run: |
-          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
+          psql "$SB_DB_URL" \
             -v ON_ERROR_STOP=1 -q -f supabase/baseline.sql
 
       # ⚠️ O REALTIME PRECISA REINICIAR DEPOIS DO BASELINE — senão ele assina e
@@ -775,7 +780,7 @@ jobs:
       # `SUPABASE_DB_URL` no `.env.local` (e não só no `env:` do passo de teste):
       # `seed-e2e-escalacao.ts` abre um `pg.Pool` direto, e o `.env.local` é a
       # única fonte que ele lê. Sem a linha, o `pg` cai no default 5432 e morre
-      # com ECONNREFUSED — o stack local do Supabase publica o Postgres na 54322.
+      # com ECONNREFUSED — o stack local do Supabase publica o Postgres na porta do config.toml (hoje 55422).
       # Medido: foi exatamente assim que a primeira execução deste passo falhou.
       #
       # A maioria das specs roda o próprio seed num `beforeAll`. Estas TRÊS não
