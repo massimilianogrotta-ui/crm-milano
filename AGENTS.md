@@ -277,6 +277,11 @@ Se a regra não está escrita, diga que não está e pergunte — não preencha 
 suposição plausível. Ao documentar, marque o que é `CONFIRMADO` (provado por código) e o
 que é `INFERIDO`.
 
+## Stato del progetto (regola DEF, 2026-10-16)
+Lo stato di questo progetto vive nella scheda in Hive sul VPS (pagina «Progetti» di Mission Control), scritta SOLO da Hermes A.
+Chi lavora qui (Claude Code, Codex, operai) non scrive lo stato: porta prove (commit, test verdi, link) a Hermes, che le registra.
+I piani restano in DEF/Planning; nessun cambio sul VPS senza il sì di Max.
+
 <!-- BEGIN:nextjs-agent-rules -->
 
 # This is NOT the Next.js you know
