@@ -1,0 +1,9 @@
+# Configurazione gitleaks DEF (2026-10-15): regole standard + regole nostre.
+[extend]
+useDefault = true
+
+# Marcatore usato SOLO per provare che l'hook blocca (non somiglia a nessuna chiave vera).
+[[rules]]
+id = "def-test-marker"
+description = "Marcatore di prova DEF"
+regex = '''DEF_GITLEAKS_TEST_MARKER_[0-9]+'''
