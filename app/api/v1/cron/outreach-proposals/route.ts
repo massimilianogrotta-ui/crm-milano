@@ -7,11 +7,12 @@
  */
 import { randomUUID } from "node:crypto";
 import type { NextRequest } from "next/server";
+import { autorizaCron } from "@/lib/auth/cron-auth";
 
 import { ok, fail } from "@/lib/api/wrappers";
-import { env } from "@/lib/env";
 import { logger } from "@/lib/logger";
 import { outreachOrgId } from "@/lib/outreach/config";
+import { nellaFinestraOutreachRoma } from "@/lib/outreach/day";
 import { generaProposte } from "@/lib/outreach/generate";
 import { bloccaOutreach } from "@/lib/outreach/lock";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -21,23 +22,14 @@ export const dynamic = "force-dynamic";
 export async function GET(req: NextRequest): Promise<Response> {
   const requestId = randomUUID();
 
-  const auth = req.headers.get("authorization") ?? "";
-  const provided = auth.startsWith("Bearer ") ? auth.slice("Bearer ".length).trim() : "";
-  const accepted: string[] = [];
-  if (env.INTERNAL_CRON_SECRET) accepted.push(env.INTERNAL_CRON_SECRET);
-  if (env.INTERNAL_SECRET) accepted.push(env.INTERNAL_SECRET);
-  if (accepted.length === 0 || !provided || !accepted.includes(provided)) {
+  if (!autorizaCron(req)) {
     return fail("forbidden", "Cron secret missing or invalid.", 403, { requestId });
   }
 
   const orgId = outreachOrgId();
   if (!orgId) return ok({ stato: "spento" }, { requestId });
 
-  // Fascia oraria Italia: solo tra le 9 e le 19.
-  const ora = Number(
-    new Intl.DateTimeFormat("it-IT", { hour: "2-digit", hour12: false, timeZone: "Europe/Rome" }).format(new Date()),
-  );
-  if (ora < 9 || ora >= 19) return ok({ stato: "fuori_orario" }, { requestId });
+  if (!nellaFinestraOutreachRoma(new Date())) return ok({ stato: "fuori_orario" }, { requestId });
 
   try {
     const libera = await bloccaOutreach(orgId);

@@ -291,3 +291,23 @@ This version has breaking changes — APIs, conventions, and file structure may 
 This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
 
 <!-- END:nextjs-agent-rules -->
+
+## CODE STANDARD (valid for every DEF project)
+
+Approved by Max 2026-10-13. Same standard as the DEF repo (`CLAUDE.md` → CODE STANDARD); if this file and DEF disagree, DEF wins. Livello invii and Migrazioni automatiche are set per plan in DEF (`LOOP/PROTOCOL.md`).
+
+1. Never push, merge or deploy without Max's `/def-ok`. Exception: DEF notes/memory on `main`.
+2. Deploy is always gated. Customer sends follow the plan's `Livello invii: N` (0 gate, 1 only models Max approved, 2 free; only Max raises it).
+3. Secrets never in files, commits or chat; never open `.env`.
+4. Short branches `feat:`/`fix:`, atomic commits, explicit paths (never `git add -A` in code repos), no force-push, no `reset --hard`.
+5. Worktree only for parallel work or agent sessions.
+6. Every table has tenant/org + RLS + an isolation test. Migrations versioned and additive, never loose SQL.
+7. Migrations, RLS, money, autonomy levels: strong model only, never a cheap model or Codex. Workers prepare the migration file, they do not apply it. Automatic migrations (production included) only in plans with `Migrazioni automatiche: sì` (missing = no), always applied by the strong model.
+8. Validate external input (Zod or equivalent); generic errors outward; no `console.log`, use the logger.
+9. One `verify` command per project (types + lint + tests), run before the commit. "Done" = `verify` re-run + the real screen opened.
+10. Every product has a progress dashboard and reversible actions with a log and undo.
+11. Real customer data never goes to external models (Codex, Ollama).
+12. Commits: conventional `type(scope): description` ≤72 chars, ending with `Co-Authored-By` of the model used.
+13. Package manager: pnpm for new projects; existing ones unchanged.
+
+Gaps still open: CI on allio-v2 and clientbase-mini, secret scanning, one formatter, authz tests on allio-v2, link crm-milano dashboard to DEF.

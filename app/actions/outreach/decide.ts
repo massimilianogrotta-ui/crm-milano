@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 
 import { loadAuthUser, resolveActiveOrg } from "@/lib/auth/server";
 import { ROLE_RANK, type ActiveOrg, type AuthUser } from "@/lib/auth/types";
-import { giornataRoma } from "@/lib/outreach/day";
+import { giornataRoma, nellaFinestraOutreachRoma } from "@/lib/outreach/day";
 import { bloccaOutreach } from "@/lib/outreach/lock";
 import { cellulareItaliano } from "@/lib/outreach/select";
 import { sessaoProntaParaEnvio, ensureConversation } from "@/lib/automation/start-conversation";
@@ -58,6 +58,10 @@ export async function decidiProposta(id: string, azione: "approva" | "rifiuta"):
   if (azione === "approva" && row.channel === "wa" &&
       (!row.contact_id || cellulareItaliano(contatto?.phone_number ?? null) !== row.to_address)) {
     return { ok: false, error: "invalid_phone" };
+  }
+  if (azione === "approva" && row.channel === "wa" && row.kind === "followup" &&
+      !nellaFinestraOutreachRoma(new Date())) {
+    return { ok: false, error: "fuori_orario" };
   }
 
   let libera: (() => Promise<void>) | null = null;

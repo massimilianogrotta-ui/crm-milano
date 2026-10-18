@@ -1,0 +1,15 @@
+-- Migration 0244 — a chave pública (anon/authenticated) perde TRUNCATE em
+-- `ai_budgets` (porta de upstream 0537, #2258).
+--
+-- TRUNCATE não é filtrado pela RLS, e `anon` é a chave que vai ao browser. A
+-- 0160 revogou INSERT/UPDATE/DELETE da chave pública (todo escritor de
+-- `ai_budgets` usa service role, medido no cabeçalho dela), mas o TRUNCATE que o
+-- snapshot concede ficou de pé. Leitura (SELECT, escopada pela policy) não muda.
+--
+-- No baseline o revoke também passa a morar AO LADO dos grants do corpo (upstream
+-- #2255), e o de `idempotency_keys` (0219) idem (upstream f6fe03797): no fim do
+-- apêndice, cada passada do `update.sh` devolvia o privilégio até chegar lá — e o
+-- deixava de pé se a passada morresse no meio. O estado final não muda.
+--
+-- Idempotente: revoke de privilégio que já não existe é no-op.
+revoke truncate on table public.ai_budgets from authenticated, anon;
