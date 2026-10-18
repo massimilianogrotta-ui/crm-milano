@@ -4674,6 +4674,12 @@ GRANT ALL ON TABLE "public"."ai_budgets" TO "anon";
 GRANT ALL ON TABLE "public"."ai_budgets" TO "authenticated";
 GRANT ALL ON TABLE "public"."ai_budgets" TO "service_role";
 
+-- I/U/D/T de `anon` e `authenticated` saem junto dos grants (upstream #2255/#2258):
+-- morando só no bloco da 0160, no fim do arquivo, a chave anon recuperava a
+-- escrita a cada passada do `update.sh` até a linha de lá. TRUNCATE (0244) não
+-- passa pela RLS e nenhum consumidor o usa. A decisão segue no bloco da 0160.
+revoke insert, update, delete, truncate on table public.ai_budgets from authenticated, anon;
+
 
 
 GRANT ALL ON TABLE "public"."ai_chunks" TO "anon";
@@ -4809,6 +4815,13 @@ GRANT ALL ON TABLE "public"."event_log" TO "service_role";
 GRANT ALL ON TABLE "public"."idempotency_keys" TO "anon";
 GRANT ALL ON TABLE "public"."idempotency_keys" TO "authenticated";
 GRANT ALL ON TABLE "public"."idempotency_keys" TO "service_role";
+
+-- TRUNCATE ignora RLS; nenhum consumidor de idempotência precisa dele. A
+-- revogação acompanha os grants acima de propósito: o `update.sh` reaplica o
+-- arquivo inteiro, e deixá-la no fim do apêndice devolvia o privilégio ao `anon`
+-- a cada atualização até essa linha — e o mantinha, se a passada morresse no
+-- meio (upstream f6fe03797, issue #2251; a revogação nasceu na 0219).
+revoke truncate on public.idempotency_keys from public, anon, authenticated;
 
 
 
@@ -18352,8 +18365,6 @@ create policy idempotency_platform_creation_server_only on public.idempotency_ke
   as restrictive for all to anon, authenticated
   using (endpoint not like '/api/v1/admin/tenants:%' and not tenant_creation_trusted)
   with check (endpoint not like '/api/v1/admin/tenants:%' and not tenant_creation_trusted);
--- TRUNCATE ignora RLS; nenhum consumidor de idempotência precisa dele.
-revoke truncate on public.idempotency_keys from public, anon, authenticated;
 
 -- Criação administrativa atômica; chave existente com endpoint por ator, sem tokens.
 -- Apenas service_role: identidade/plataforma/MFA são verificadas pelo handler.
@@ -24413,6 +24424,10 @@ comment on table public.api_audit_log is
   'L-10: Append-only para todo papel que não seja o dono — anon, authenticated, service_role e papéis do operador não têm UPDATE, DELETE nem TRUNCATE (migration 0243; o default ACL do Supabase concedia os três). O único apagamento é fn_expurgar_auditoria_vencida (0167), security definer com piso de 90 dias no corpo. Retenção default 5 anos.';
 
 notify pgrst, 'reload schema';
+
+-- ---- a chave pública perde TRUNCATE em ai_budgets (migration 0244) ----
+-- Porta de upstream 0537 (#2258). Também ao lado dos grants do corpo.
+revoke truncate on table public.ai_budgets from authenticated, anon;
 
 -- ---- VARREDURA anon: função nova nasce exposta em quem ATUALIZA (migration 0116) ----
 --
