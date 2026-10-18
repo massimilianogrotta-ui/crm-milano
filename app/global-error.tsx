@@ -34,7 +34,7 @@ export default function GlobalError({
 }) {
   const [eventId, setEventId] = useState<string | undefined>(undefined);
   const [copied, setCopied] = useState(false);
-  const idioma = useMemo(idiomaDoErro, []);
+  const idioma = useMemo(() => idiomaDoErro(), []);
   const t = (texto: string) => traduzir(texto, idioma);
 
   useEffect(() => {
