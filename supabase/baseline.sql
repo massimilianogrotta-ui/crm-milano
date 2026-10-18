@@ -4732,6 +4732,12 @@ GRANT SELECT,INSERT,REFERENCES,TRIGGER,TRUNCATE ON TABLE "public"."api_audit_log
 GRANT SELECT,INSERT,REFERENCES,TRIGGER,TRUNCATE ON TABLE "public"."api_audit_log" TO "authenticated";
 GRANT SELECT,INSERT,REFERENCES,TRIGGER,TRUNCATE ON TABLE "public"."api_audit_log" TO "service_role";
 
+-- O bloco da 0243, no fim do arquivo, é a fonte do contrato (só-inclusão). Mas o
+-- TRUNCATE que estes grants concedem — que a RLS não alcança — sai JÁ AQUI: entre
+-- o grant e o bloco, a chave o recuperava a cada passada do `update.sh`, e uma
+-- passada interrompida o deixaria de pé (upstream #2255/#2258).
+revoke update, delete, truncate on table public.api_audit_log from public, anon, authenticated, service_role;
+
 
 
 GRANT ALL ON TABLE "public"."api_tokens" TO "anon";
@@ -24379,6 +24385,34 @@ begin
 end;$$;
 revoke all on function public.fn_lgpd_anonymize_contact(uuid,uuid) from public,anon,authenticated,service_role;
 grant execute on function public.fn_lgpd_anonymize_contact(uuid,uuid) to authenticated;
+
+-- ---- o audit log é só-inclusão para TODO papel que não seja o dono (migration 0243) ----
+-- Porta de upstream 0258 + 0525. O invariante audit-log-so-inclusao extrai este bloco pelo rótulo.
+revoke update, delete, truncate on table public.api_audit_log
+  from public, anon, authenticated, service_role;
+
+do $$
+declare
+  v_papel text;
+begin
+  for v_papel in
+    select distinct case when a.grantee = 0 then 'public' else quote_ident(r.rolname) end
+      from pg_class c
+      cross join lateral aclexplode(c.relacl) a
+      left join pg_roles r on r.oid = a.grantee
+     where c.oid = 'public.api_audit_log'::regclass
+       and a.grantee <> c.relowner
+       and a.privilege_type in ('UPDATE', 'DELETE', 'TRUNCATE')
+  loop
+    execute format('revoke update, delete, truncate on table public.api_audit_log from %s', v_papel);
+  end loop;
+end
+$$;
+
+comment on table public.api_audit_log is
+  'L-10: Append-only para todo papel que não seja o dono — anon, authenticated, service_role e papéis do operador não têm UPDATE, DELETE nem TRUNCATE (migration 0243; o default ACL do Supabase concedia os três). O único apagamento é fn_expurgar_auditoria_vencida (0167), security definer com piso de 90 dias no corpo. Retenção default 5 anos.';
+
+notify pgrst, 'reload schema';
 
 -- ---- VARREDURA anon: função nova nasce exposta em quem ATUALIZA (migration 0116) ----
 --
