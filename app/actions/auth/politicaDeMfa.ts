@@ -34,6 +34,11 @@ export type ResultadoDaPolitica = { ok: true } | { ok: false; erro: string };
  * tela diria "salvo" sobre nada. O id vem de `resolveActiveOrg`, nunca do corpo.
  */
 export async function definirExigenciaDeMfa(exigir: boolean): Promise<ResultadoDaPolitica> {
+  // Server action é endpoint público: o tipo `boolean` não chega ao runtime.
+  // Uma entrada como "admin" gravaria `mfa_required: "admin"` (lido como
+  // desligado por `empresaExigeMfa`) e auditaria "exigida" por ser truthy.
+  // Numa ação de segurança, entrada malformada é recusada (upstream #2163).
+  if (typeof exigir !== "boolean") return { ok: false, erro: "Valor inválido para a regra." };
   const user = await loadAuthUser();
   if (!user) return { ok: false, erro: "Sua sessão expirou. Entre de novo." };
   if (supportWriteError(user.support)) return { ok: false, erro: "Acompanhamento somente leitura ou encerrado." };
