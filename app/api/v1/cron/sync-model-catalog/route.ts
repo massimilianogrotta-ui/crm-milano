@@ -35,6 +35,7 @@
  */
 import { randomUUID } from "node:crypto";
 import type { NextRequest } from "next/server";
+import { autorizaCron } from "@/lib/auth/cron-auth";
 
 import { fail, ok } from "@/lib/api/wrappers";
 import {
@@ -47,7 +48,6 @@ import {
   planejarSincronizacao,
   type ModeloExistente,
 } from "@/lib/ai/catalogo/sincronizar";
-import { env } from "@/lib/env";
 import { logger } from "@/lib/logger";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -127,9 +127,7 @@ async function buscarDaOpenRouter(): Promise<ModeloDaOpenRouter[]> {
 }
 
 function autorizado(req: NextRequest): boolean {
-  const esperado = env.INTERNAL_CRON_SECRET || env.INTERNAL_SECRET;
-  if (!esperado) return false; // fail-closed
-  return req.headers.get("authorization") === `Bearer ${esperado}`;
+  return autorizaCron(req);
 }
 
 async function handler(req: NextRequest): Promise<Response> {

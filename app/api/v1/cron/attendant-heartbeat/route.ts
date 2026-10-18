@@ -13,10 +13,10 @@
  */
 import { randomUUID } from "node:crypto";
 import type { NextRequest } from "next/server";
+import { autorizaCron } from "@/lib/auth/cron-auth";
 
 import { ok, fail } from "@/lib/api/wrappers";
 import { audit } from "@/lib/audit";
-import { env } from "@/lib/env";
 import { HEARTBEAT_TIMEOUT_MINUTES } from "@/lib/routing/eligibility";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -25,12 +25,7 @@ export const dynamic = "force-dynamic";
 export async function GET(req: NextRequest): Promise<Response> {
   const requestId = randomUUID();
 
-  const authHeader = req.headers.get("authorization") ?? "";
-  const provided = authHeader.startsWith("Bearer ")
-    ? authHeader.slice("Bearer ".length).trim()
-    : "";
-  const accepted = [env.INTERNAL_CRON_SECRET, env.INTERNAL_SECRET].filter(Boolean);
-  if (accepted.length === 0 || !provided || !accepted.includes(provided)) {
+  if (!autorizaCron(req)) {
     return fail("forbidden", "Cron secret missing or invalid.", 403, { requestId });
   }
 
