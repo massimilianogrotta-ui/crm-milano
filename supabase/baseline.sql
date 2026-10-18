@@ -7679,14 +7679,11 @@ create policy "conversation_notes_select" on conversation_notes
     organization_id in (select fn_user_org_ids()) or fn_is_platform_admin()
   );
 
+-- A escrita `for all` da 0063 não é mais recriada aqui: a cada `update.sh` ela
+-- reabriria, até o bloco da migration 0241, o buraco que a 0241 fecha (qualquer
+-- agent editando/apagando nota de colega). As policies por operação moram no
+-- bloco da 0241; entre os dois blocos a tabela fica SEM escrita, o lado seguro.
 drop policy if exists "conversation_notes_write" on conversation_notes;
-create policy "conversation_notes_write" on conversation_notes
-  for all using (
-    organization_id in (select fn_user_org_ids()) and fn_role_at_least(organization_id, 'agent')
-  )
-  with check (
-    organization_id in (select fn_user_org_ids()) and fn_role_at_least(organization_id, 'agent')
-  );
 
 -- ---- human cases (migration 0066) ----
 create table if not exists agent_cases (
@@ -24321,6 +24318,42 @@ create policy "user_orgs_update" on "public"."user_organizations" for update usi
 -- grants da função nova (espelha o bloco da fn_is_platform_admin)
 revoke execute on function public.fn_is_platform_admin_full() from public, anon;
 grant execute on function public.fn_is_platform_admin_full() to authenticated, service_role;
+
+-- ---- nota interna: editar/apagar só o autor ou manager+ (migration 0241) ----
+-- Porta adaptada de upstream d9c3afdfc (lá 0509, #1870), sem a visibilidade da 0478.
+drop policy if exists "conversation_notes_write" on public.conversation_notes;
+
+drop policy if exists "conversation_notes_insert" on public.conversation_notes;
+create policy "conversation_notes_insert" on public.conversation_notes
+  for insert
+  with check (
+    organization_id in (select public.fn_user_org_ids())
+    and public.fn_role_at_least(organization_id, 'agent')
+    and created_by_user_id = auth.uid()
+  );
+
+drop policy if exists "conversation_notes_update" on public.conversation_notes;
+create policy "conversation_notes_update" on public.conversation_notes
+  for update
+  using (
+    organization_id in (select public.fn_user_org_ids())
+    and public.fn_role_at_least(organization_id, 'agent')
+    and (created_by_user_id = auth.uid() or public.fn_role_at_least(organization_id, 'manager'))
+  )
+  with check (
+    organization_id in (select public.fn_user_org_ids())
+    and public.fn_role_at_least(organization_id, 'agent')
+    and (created_by_user_id = auth.uid() or public.fn_role_at_least(organization_id, 'manager'))
+  );
+
+drop policy if exists "conversation_notes_delete" on public.conversation_notes;
+create policy "conversation_notes_delete" on public.conversation_notes
+  for delete
+  using (
+    organization_id in (select public.fn_user_org_ids())
+    and public.fn_role_at_least(organization_id, 'agent')
+    and (created_by_user_id = auth.uid() or public.fn_role_at_least(organization_id, 'manager'))
+  );
 
 -- ---- VARREDURA anon: função nova nasce exposta em quem ATUALIZA (migration 0116) ----
 --
