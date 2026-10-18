@@ -49,7 +49,10 @@ services:
     restart: unless-stopped
     environment:
       WAHA_API_KEY: "sha512:${WAHA_API_KEY_SHA512}"
-      WHATSAPP_HOOK_URL: ${WAHA_WEBHOOK_BASE_URL}/api/v1/webhooks/waha
+      # Fisso sulla rete interna: la rotta globale risponde 404 a ciò che passa
+      # dal Caddy dell'host (upstream a0f18c77c/ffb028470). Letto dal .env, un
+      # indirizzo pubblico qui fermerebbe l'ingresso dei messaggi.
+      WHATSAPP_HOOK_URL: http://app:3000/api/v1/webhooks/waha
       WHATSAPP_HOOK_EVENTS: 'message,session.status'
       WAHA_WORKER_REDIS_URL: redis://srh:8080
       WAHA_MEDIA_STORAGE: LOCAL

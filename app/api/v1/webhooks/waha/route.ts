@@ -5,6 +5,14 @@
  * atual). Resolve a channel_session por `body.session` (= waha_session_name).
  * A variante /waha/[token] é a rota per-tenant canônica de produção.
  *
+ * Só atende a REDE INTERNA. O WAHA da stack chama `http://app:3000` pela rede
+ * do Docker; quem está do outro lado da borda pública usa a rota por token.
+ * Requisição que traz a marca de um proxy de borda recebe 404
+ * (`chegouPelaBorda`, lib/http/ip-do-cliente.ts — régua de cabeçalho). A regra
+ * mora na aplicação porque o deploy do fork (tools/deploy) usa o Caddy DO HOST,
+ * que encaminha todos os caminhos e não tem o `@waha_global` do Caddyfile do kit.
+ * Porta de upstream a0f18c77c + ffb028470.
+ *
  * Pipeline: lookup session -> verifica HMAC SHA512 -> loga em
  * webhook_events_log -> dispatchWahaEvent (ingestão compartilhada, ver
  * lib/waha/ingest.ts). Idempotência e resolução atômica de contato/conversa
@@ -16,6 +24,7 @@ import type { NextRequest, NextResponse } from "next/server";
 import { fail, ok } from "@/lib/api/wrappers";
 import { audit } from "@/lib/audit";
 import { ARCHIVED_AT, queryTolerantToMissingArchived } from "@/lib/channels/archived";
+import { chegouPelaBorda } from "@/lib/http/ip-do-cliente";
 import { logger } from "@/lib/logger";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { conferirContratoWaha, lerRoteamentoWaha } from "@/lib/waha/envelope";
@@ -27,6 +36,16 @@ export const runtime = "nodejs";
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
   const requestId = randomUUID();
+
+  // Antes de ler o corpo e de tocar o banco: ver o cabeçalho deste arquivo.
+  if (chegouPelaBorda(req.headers)) {
+    // `warn` e sem corpo: o rastro serve a quem configurou o WAHA por um
+    // endereço público e viu a ingestão parar — a rota certa é a por token.
+    logger.warn("[waha.webhook] rota global recusou requisição vinda da borda", {
+      request_id: requestId,
+    });
+    return fail("not_found", "not found", 404, { requestId });
+  }
 
   const rawBody = await req.text();
   // ─── O contrato do fio, em DOIS momentos ─────────────────────────────────
