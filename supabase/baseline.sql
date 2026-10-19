@@ -24640,124 +24640,6 @@ create policy webhook_sources_manager_write on public.webhook_sources
   using (public.fn_is_platform_admin_full() OR ((organization_id IN (select public.fn_user_org_ids() as fn_user_org_ids)) AND public.fn_role_at_least(organization_id, 'manager')))
   with check (public.fn_is_platform_admin_full() OR ((organization_id IN (select public.fn_user_org_ids() as fn_user_org_ids)) AND public.fn_role_at_least(organization_id, 'manager')));
 
--- ---- VARREDURA anon: função nova nasce exposta em quem ATUALIZA (migration 0116) ----
---
--- ⚠️ ESTE BLOCO É, DE PROPÓSITO, O ÚLTIMO DO ARQUIVO. Apêndice novo entra ANTES
-
--- dele — quem o empurrar para o meio desarma a cura para tudo que vier depois.
--- Vigiado por `tests/unit/varredura-anon-e-o-ultimo-bloco.test.ts`.
---
--- A 0108 revogou anon numa LISTA de 8 funções, medida num banco instalado do
--- ZERO. Quem ATUALIZA tem outro estado: o `ALTER DEFAULT PRIVILEGES ... GRANT
--- ALL ON FUNCTIONS TO anon` do corpo deste arquivo grava uma entrada em
--- `pg_default_acl` que fica no catálogo PARA SEMPRE, e a partir daí toda função
--- criada em `public` nasce com EXECUTE para anon — inclusive as deste apêndice.
---
--- Medido numa VPS real (2026-08-07), comparando com o que um install fresco
--- produz: 6 definer expostas a anon e 5 a authenticated, entre elas
--- `fn_decrypt_oauth` — alcançável pela anon key, que vai para o browser.
---
--- Lista conserta o estoque e reabre no próximo `create function`. Esta varredura
--- é auto-curativa e roda DEPOIS de tudo que cria função, então cura no mesmo run
--- em que o defeito nasceria. Desfazer o ALTER DEFAULT PRIVILEGES não serve: ele
--- vem do `pg_dump` do Supabase e é reescrito a cada re-aplicação.
---
--- As duas origens de EXECUTE (a mesma lição da 0108): grant DIRETO a anon, que
--- `revoke from public` não remove; e grant a PUBLIC, do qual anon HERDA, que
--- `revoke from anon` não remove. O privilégio EFETIVO de authenticated e
--- service_role é medido ANTES e devolvido depois — tira anon sem tirar leitura.
-do $$
-declare
-  f record;
-  tinha_auth boolean;
-  tinha_service boolean;
-begin
-  if to_regrole('anon') is null then
-    return;
-  end if;
-
-  for f in
-    select p.oid, p.oid::regprocedure as assinatura
-      from pg_proc p
-      join pg_namespace n on n.oid = p.pronamespace
-     where n.nspname = 'public'
-       and p.prosecdef
-  loop
-    tinha_auth := to_regrole('authenticated') is not null
-                  and has_function_privilege('authenticated', f.oid, 'EXECUTE');
-    tinha_service := to_regrole('service_role') is not null
-                     and has_function_privilege('service_role', f.oid, 'EXECUTE');
-
-    execute format('revoke execute on function %s from public, anon', f.assinatura);
-
-    if tinha_auth then
-      execute format('grant execute on function %s to authenticated', f.assinatura);
-    end if;
-    if tinha_service then
-      execute format('grant execute on function %s to service_role', f.assinatura);
-    end if;
-  end loop;
-end $$;
-
--- regra 2 (authenticated): as 5 que o update abriu e o install não abre. Aqui não
--- cabe varredura — `authenticated` PRECISA de EXECUTE nos helpers de RLS e em
--- `retrieve_top_k_chunks` (num install fresco ele tem). É julgamento por função,
--- e o alvo de cada linha é o valor que um install fresco produz, medido.
-revoke execute on function public.fn_audit_log_row() from authenticated;
-revoke execute on function public.fn_decrypt_oauth(bytea) from authenticated;
-revoke execute on function public.fn_encrypt_oauth(text) from authenticated;
-revoke execute on function public.fn_lgpd_cascade_redact_contact(uuid, uuid, uuid) from authenticated;
-revoke execute on function public.fn_update_budget_consumption() from authenticated;
-
-grant execute on function public.fn_audit_log_row() to service_role;
-grant execute on function public.fn_decrypt_oauth(bytea) to service_role;
-grant execute on function public.fn_encrypt_oauth(text) to service_role;
-grant execute on function public.fn_lgpd_cascade_redact_contact(uuid, uuid, uuid) to service_role;
-grant execute on function public.fn_update_budget_consumption() to service_role;
-
--- ---- agente Account manager: bozze follow-up (migration 0239) ----
--- 0239 · account_manager_followup_drafts
--- Bozze di follow-up scritte dall'agente «Account manager» via API riservata
--- (/api/v1/account-manager/*). SOLO bozze: nessun worker, trigger o rotta legge
--- questa tabella per inviare. Un umano la legge e, se vuole, scrive lui il messaggio.
--- Lettura per tutta l'org, scrittura a ruoli (forma 0238). Idempotente.
-
-create table if not exists public.account_manager_followup_drafts (
-  id uuid primary key default gen_random_uuid(),
-  organization_id uuid not null references public.organizations(id) on delete cascade,
-  contact_id uuid not null references public.contacts(id) on delete cascade,
-  lead_id uuid references public.crm_leads(id) on delete set null,
-  channel text not null default 'email' check (channel in ('email', 'whatsapp', 'altro')),
-  subject text check (subject is null or char_length(subject) <= 300),
-  body text not null check (char_length(body) between 1 and 10000),
-  status text not null default 'draft' check (status in ('draft', 'archived')),
-  created_by_api_token_id uuid references public.api_tokens(id) on delete set null,
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
-);
-
-create index if not exists idx_am_followup_drafts_contact
-  on public.account_manager_followup_drafts(organization_id, contact_id, created_at desc);
-
-alter table public.account_manager_followup_drafts enable row level security;
-revoke all on public.account_manager_followup_drafts from anon;
-
-drop policy if exists am_followup_drafts_select on public.account_manager_followup_drafts;
-drop policy if exists am_followup_drafts_write on public.account_manager_followup_drafts;
-
-create policy am_followup_drafts_select on public.account_manager_followup_drafts for select
-  using (organization_id in (select public.fn_user_org_ids()));
-
-create policy am_followup_drafts_write on public.account_manager_followup_drafts for all
-  using (
-    organization_id in (select public.fn_user_org_ids())
-    and public.fn_role_at_least(organization_id, 'agent')
-  )
-  with check (
-    organization_id in (select public.fn_user_org_ids())
-    and public.fn_role_at_least(organization_id, 'agent')
-  );
-
 -- ---- cascata LGPD alcança as bozze do Account manager (migration 0246) ----
 CREATE OR REPLACE FUNCTION "public"."fn_lgpd_cascade_redact_contact"("p_organization_id" "uuid", "p_contact_id" "uuid", "p_request_id" "uuid") RETURNS "jsonb"
     LANGUAGE "plpgsql" SECURITY DEFINER
@@ -24998,3 +24880,122 @@ end;
 $$;
 revoke all on function public.fn_lgpd_cascade_redact_contact(uuid,uuid,uuid) from public,anon,authenticated;
 grant execute on function public.fn_lgpd_cascade_redact_contact(uuid,uuid,uuid) to service_role;
+
+
+-- ---- VARREDURA anon: função nova nasce exposta em quem ATUALIZA (migration 0116) ----
+--
+-- ⚠️ ESTE BLOCO É, DE PROPÓSITO, O ÚLTIMO DO ARQUIVO. Apêndice novo entra ANTES
+
+-- dele — quem o empurrar para o meio desarma a cura para tudo que vier depois.
+-- Vigiado por `tests/unit/varredura-anon-e-o-ultimo-bloco.test.ts`.
+--
+-- A 0108 revogou anon numa LISTA de 8 funções, medida num banco instalado do
+-- ZERO. Quem ATUALIZA tem outro estado: o `ALTER DEFAULT PRIVILEGES ... GRANT
+-- ALL ON FUNCTIONS TO anon` do corpo deste arquivo grava uma entrada em
+-- `pg_default_acl` que fica no catálogo PARA SEMPRE, e a partir daí toda função
+-- criada em `public` nasce com EXECUTE para anon — inclusive as deste apêndice.
+--
+-- Medido numa VPS real (2026-08-07), comparando com o que um install fresco
+-- produz: 6 definer expostas a anon e 5 a authenticated, entre elas
+-- `fn_decrypt_oauth` — alcançável pela anon key, que vai para o browser.
+--
+-- Lista conserta o estoque e reabre no próximo `create function`. Esta varredura
+-- é auto-curativa e roda DEPOIS de tudo que cria função, então cura no mesmo run
+-- em que o defeito nasceria. Desfazer o ALTER DEFAULT PRIVILEGES não serve: ele
+-- vem do `pg_dump` do Supabase e é reescrito a cada re-aplicação.
+--
+-- As duas origens de EXECUTE (a mesma lição da 0108): grant DIRETO a anon, que
+-- `revoke from public` não remove; e grant a PUBLIC, do qual anon HERDA, que
+-- `revoke from anon` não remove. O privilégio EFETIVO de authenticated e
+-- service_role é medido ANTES e devolvido depois — tira anon sem tirar leitura.
+do $$
+declare
+  f record;
+  tinha_auth boolean;
+  tinha_service boolean;
+begin
+  if to_regrole('anon') is null then
+    return;
+  end if;
+
+  for f in
+    select p.oid, p.oid::regprocedure as assinatura
+      from pg_proc p
+      join pg_namespace n on n.oid = p.pronamespace
+     where n.nspname = 'public'
+       and p.prosecdef
+  loop
+    tinha_auth := to_regrole('authenticated') is not null
+                  and has_function_privilege('authenticated', f.oid, 'EXECUTE');
+    tinha_service := to_regrole('service_role') is not null
+                     and has_function_privilege('service_role', f.oid, 'EXECUTE');
+
+    execute format('revoke execute on function %s from public, anon', f.assinatura);
+
+    if tinha_auth then
+      execute format('grant execute on function %s to authenticated', f.assinatura);
+    end if;
+    if tinha_service then
+      execute format('grant execute on function %s to service_role', f.assinatura);
+    end if;
+  end loop;
+end $$;
+
+-- regra 2 (authenticated): as 5 que o update abriu e o install não abre. Aqui não
+-- cabe varredura — `authenticated` PRECISA de EXECUTE nos helpers de RLS e em
+-- `retrieve_top_k_chunks` (num install fresco ele tem). É julgamento por função,
+-- e o alvo de cada linha é o valor que um install fresco produz, medido.
+revoke execute on function public.fn_audit_log_row() from authenticated;
+revoke execute on function public.fn_decrypt_oauth(bytea) from authenticated;
+revoke execute on function public.fn_encrypt_oauth(text) from authenticated;
+revoke execute on function public.fn_lgpd_cascade_redact_contact(uuid, uuid, uuid) from authenticated;
+revoke execute on function public.fn_update_budget_consumption() from authenticated;
+
+grant execute on function public.fn_audit_log_row() to service_role;
+grant execute on function public.fn_decrypt_oauth(bytea) to service_role;
+grant execute on function public.fn_encrypt_oauth(text) to service_role;
+grant execute on function public.fn_lgpd_cascade_redact_contact(uuid, uuid, uuid) to service_role;
+grant execute on function public.fn_update_budget_consumption() to service_role;
+
+-- ---- agente Account manager: bozze follow-up (migration 0239) ----
+-- 0239 · account_manager_followup_drafts
+-- Bozze di follow-up scritte dall'agente «Account manager» via API riservata
+-- (/api/v1/account-manager/*). SOLO bozze: nessun worker, trigger o rotta legge
+-- questa tabella per inviare. Un umano la legge e, se vuole, scrive lui il messaggio.
+-- Lettura per tutta l'org, scrittura a ruoli (forma 0238). Idempotente.
+
+create table if not exists public.account_manager_followup_drafts (
+  id uuid primary key default gen_random_uuid(),
+  organization_id uuid not null references public.organizations(id) on delete cascade,
+  contact_id uuid not null references public.contacts(id) on delete cascade,
+  lead_id uuid references public.crm_leads(id) on delete set null,
+  channel text not null default 'email' check (channel in ('email', 'whatsapp', 'altro')),
+  subject text check (subject is null or char_length(subject) <= 300),
+  body text not null check (char_length(body) between 1 and 10000),
+  status text not null default 'draft' check (status in ('draft', 'archived')),
+  created_by_api_token_id uuid references public.api_tokens(id) on delete set null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists idx_am_followup_drafts_contact
+  on public.account_manager_followup_drafts(organization_id, contact_id, created_at desc);
+
+alter table public.account_manager_followup_drafts enable row level security;
+revoke all on public.account_manager_followup_drafts from anon;
+
+drop policy if exists am_followup_drafts_select on public.account_manager_followup_drafts;
+drop policy if exists am_followup_drafts_write on public.account_manager_followup_drafts;
+
+create policy am_followup_drafts_select on public.account_manager_followup_drafts for select
+  using (organization_id in (select public.fn_user_org_ids()));
+
+create policy am_followup_drafts_write on public.account_manager_followup_drafts for all
+  using (
+    organization_id in (select public.fn_user_org_ids())
+    and public.fn_role_at_least(organization_id, 'agent')
+  )
+  with check (
+    organization_id in (select public.fn_user_org_ids())
+    and public.fn_role_at_least(organization_id, 'agent')
+  );
