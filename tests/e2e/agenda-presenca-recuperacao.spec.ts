@@ -141,8 +141,12 @@ async function login(page: Page, email: string) {
   await page.context().clearCookies();
   await page.goto("/login");
   await page.getByLabel(/e-?mail/i).fill(email);
-  await page.getByLabel(/senha/i).fill(password);
-  await page.getByRole("button", { name: /entrar/i }).click();
+  // O bloco `test.use({ locale: "en-US" })` abaixo faz a PÁGINA DE LOGIN nascer em
+  // inglês ("Password" / "Log in"): o idioma do navegador vale até o login, e só
+  // depois entra o da organização. Sem a alternativa, o `fill` esperava um rótulo
+  // que não existe até o teto de 180 s.
+  await page.getByLabel(/senha|password/i).fill(password);
+  await page.getByRole("button", { name: /entrar|log in/i }).click();
   await page.waitForURL(/\/app(?:\/|$)/, { timeout: 60000 });
 }
 async function detail(page: Page, id: string, title: string) {
