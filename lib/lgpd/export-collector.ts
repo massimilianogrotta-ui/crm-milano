@@ -223,6 +223,16 @@ export interface OutreachProposalRow {
   sent_at: string | null;
 }
 
+/** Uma bozza de follow-up do agente Account manager sobre o titular (migration 0239). */
+export interface AccountManagerDraftRow {
+  id: string;
+  channel: string;
+  status: string;
+  subject: string | null;
+  body: string;
+  created_at: string;
+}
+
 export interface ExportPayload {
   request_id: string;
   organization_id: string;
@@ -268,6 +278,12 @@ export interface ExportPayload {
    * que se apaga a pedido do titular é o que se entrega a pedido dele.
    */
   outreach_proposals?: OutreachProposalRow[];
+  /**
+   * Bozze de follow-up do agente Account manager (migration 0239). Entra pelo
+   * mesmo motivo: a 0246 pôs `account_manager_followup_drafts` na cascata de
+   * redação, e o que se apaga a pedido do titular é o que se entrega a pedido dele.
+   */
+  account_manager_followup_drafts?: AccountManagerDraftRow[];
   reply_drafts?: Array<{
     id: string;
     status: string;
@@ -650,6 +666,26 @@ export async function collectExportData(args: CollectArgs): Promise<ExportPayloa
     }
   }
 
+  // Bozze de follow-up do Account manager — `contact_id` direto (migration 0239).
+  let account_manager_followup_drafts: AccountManagerDraftRow[] = [];
+  if (contactId) {
+    const { data, error } = await admin
+      .from("account_manager_followup_drafts")
+      .select("id, channel, status, subject, body, created_at")
+      .eq("organization_id", organizationId)
+      .eq("contact_id", contactId)
+      .order("created_at", { ascending: false })
+      .limit(500);
+    if (error) {
+      logger.warn("[lgpd-export-worker] account manager drafts load failed", {
+        request_id: requestId,
+        error: error.message,
+      });
+    } else if (data) {
+      account_manager_followup_drafts = data as AccountManagerDraftRow[];
+    }
+  }
+
   let voice_calls: VoiceCallRow[] = [];
   if (contactId) {
     const { data, error } = await admin
@@ -847,6 +883,7 @@ export async function collectExportData(args: CollectArgs): Promise<ExportPayloa
     appointment_notices,
     voice_calls,
     outreach_proposals,
+    account_manager_followup_drafts,
   };
 }
 
@@ -879,5 +916,6 @@ function emptyPayload(
     appointment_notices: [],
     voice_calls: [],
     outreach_proposals: [],
+    account_manager_followup_drafts: [],
   };
 }
