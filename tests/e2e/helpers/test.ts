@@ -29,7 +29,7 @@
  * O remédio é esperar a revelação terminar, uma vez, aqui — e não `.first()`
  * espalhado, que escolheria às cegas entre a cópia viva e a escondida.
  */
-import { test as base, type Page } from "@playwright/test";
+import { test as base, type Browser, type BrowserContext, type Page } from "@playwright/test";
 
 import {
   EVIDENCIA_DE_ERRO_VAZIA,
@@ -118,7 +118,40 @@ function esperarARevelacaoNasCargas(page: Page): void {
   embrulharANavegacao(page, () => esperarARevelacao(page));
 }
 
-export const test = base.extend({
+/**
+ * Páginas que a spec abre por `browser.newPage()` / `browser.newContext()` NÃO
+ * passam pela fixture `context` — 16 specs fazem isso num `beforeAll` para
+ * dividir o login entre os casos, e nelas o `goto` voltava a ler a página no
+ * meio da revelação (`agenda-conectar-google`, run 39225159534). O `browser` é
+ * a única porta comum: todo contexto nasce de `newContext`, e `newPage` do
+ * Playwright chama `this.newContext`. Troca-se só a criação do contexto — a
+ * navegação continua embrulhada por `embrulharANavegacao`.
+ */
+const navegadoresComEspera = new WeakSet<Browser>();
+
+function esperarARevelacaoNosContextosDoNavegador(navegador: Browser): void {
+  if (navegadoresComEspera.has(navegador)) return;
+  navegadoresComEspera.add(navegador);
+  const criarContexto = navegador.newContext.bind(navegador);
+  const comRevelacao = async (...args: Parameters<Browser["newContext"]>): Promise<BrowserContext> => {
+    const contexto = await criarContexto(...args);
+    if (args[0]?.javaScriptEnabled !== false) contexto.on("page", esperarARevelacaoNasCargas);
+    return contexto;
+  };
+  navegador.newContext = comRevelacao;
+}
+
+const baseComNavegador = base.extend<object, { browser: Browser }>({
+  browser: [
+    async ({ browser }, usar) => {
+      esperarARevelacaoNosContextosDoNavegador(browser);
+      await usar(browser);
+    },
+    { scope: "worker" },
+  ],
+});
+
+export const test = baseComNavegador.extend({
   // Sem JavaScript os reveladores não rodam e a caixa fica por definição.
   context: async ({ context, javaScriptEnabled }, usar) => {
     if (javaScriptEnabled !== false) context.on("page", esperarARevelacaoNasCargas);
