@@ -257,6 +257,16 @@ beforeAll(() => {
                     v_contact, 'first_contact', 'rls.v1', 'rls@example.com', 'rls body', 'rls');
         end if;
 
+        -- account_manager_followup_drafts (0239): a bozza de follow-up escrita
+        -- pelo agente Account manager, presa ao contato da org. Vazar entregaria
+        -- ao vizinho o texto preparado para um cliente.
+        -- (sem crase nesta prosa: o bloco inteiro e um template literal de JS.)
+        if not exists (select 1 from public.account_manager_followup_drafts where organization_id = v_org) then
+          insert into public.account_manager_followup_drafts
+            (organization_id, contact_id, body)
+            values (v_org, v_contact, 'rls body');
+        end if;
+
         -- org_voice_calls (0236): o opt-in da chamada de voz, uma linha por
         -- organizacao. A PK e o proprio organization_id, entao a semente e
         -- idempotente por construcao — mas o if not exists fica pelo mesmo
@@ -342,6 +352,9 @@ export const TABLES = [
   // migration 0238 — fila Da approvare do agente de outreach: email do contato
   // e texto preparado. Escrita exige `agent`, que e o papel semeado aqui.
   "outreach_proposals",
+  // migration 0239 — bozze de follow-up do agente Account manager: texto
+  // preparado para um cliente. Escrita exige `agent`, o papel semeado aqui.
+  "account_manager_followup_drafts",
   // ⚠️ `webhook_lead_captures` (migration 0174) NÃO entra nesta lista, e a
   // ausência é deliberada: a policy dela exige `manager`, e o usuário semeado
   // aqui é `agent` — o controle positivo falharia por ACERTO, e a "correção"

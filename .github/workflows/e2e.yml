@@ -631,6 +631,12 @@ jobs:
           # O config.toml do repo serve o kit de deploy (portas 5542x, realtime
           # desligado). No CI o realtime precisa existir: liga só aqui.
           sed -i '/^\[realtime\]/,/^\[/ s/^enabled = false/enabled = true/' supabase/config.toml
+          # Idem para o e-mail de teste (inbucket/Mailpit): signup-journey e
+          # password-recovery esperam a mensagem lá. A porta vem do config.toml
+          # (hoje 55424) e os helpers dos specs a lêem de MAILPIT_URL.
+          sed -i '/^\[inbucket\]/,/^\[/ s/^enabled = false/enabled = true/' supabase/config.toml
+          PORTA_MAIL=$(awk '/^\[inbucket\]/{d=1;next} /^\[/{d=0} d && /^port/{gsub(/[^0-9]/,"",$3); print $3}' supabase/config.toml)
+          echo "MAILPIT_URL=http://127.0.0.1:${PORTA_MAIL}" >> "$GITHUB_ENV"
           supabase start
           # A porta do Postgres vem do config.toml: lê do próprio stack, nunca fixa.
           echo "SB_DB_URL=$(supabase status -o env | grep '^DB_URL=' | cut -d'"' -f2)" >> "$GITHUB_ENV"

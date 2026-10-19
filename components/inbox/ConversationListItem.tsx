@@ -233,7 +233,9 @@ export function ConversationListItem({
           >
             {displayName}
           </span>
-          <span className="shrink-0 text-[11px] tabular-nums text-text-subtle">{time}</span>
+          {/* `text-muted`, não `text-subtle`: a 11px o `subtle` do tema claro dá 4,17:1 sobre o
+              fundo e o axe reprova como `color-contrast` (serious) — o `muted` dá ~6,6:1. */}
+          <span className="shrink-0 text-[11px] tabular-nums text-text-muted">{time}</span>
         </div>
 
         <div className="mt-0.5 flex items-center justify-between gap-2">
