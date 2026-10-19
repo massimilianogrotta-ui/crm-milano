@@ -37,7 +37,9 @@ test("admin configura testes, remove número, confirma abertura e volta a restri
   await page.getByRole("button", { name: /entrar/i }).click();
   await page.waitForURL(/\/app/);
   await page.goto("/app/connections");
-  await expect(page.getByText("Canal de validação", { exact: true })).toBeVisible();
+  // O nome do canal aparece DUAS vezes na tela: no cartão do canal (<strong>) e na
+  // lista do painel «Números por QR» (<span>). A asserção é sobre o cartão.
+  await expect(page.locator("strong").filter({ hasText: /^Canal de validação$/ })).toBeVisible();
   await expect(page.getByText("IA em modo de teste", { exact: true })).toBeVisible();
   const openPanel = () => page.getByRole("button", { name: "Configurar acesso da IA" }).click();
   const input = page.getByLabel("Números autorizados para teste");
