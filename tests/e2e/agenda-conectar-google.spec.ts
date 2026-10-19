@@ -53,7 +53,7 @@
  * consentimento pré-aprovado — que é o motivo de esta spec entrar em
  * `FORA_DO_CI` no `e2e.yml`, e não de ela ficar sem existir.
  */
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Page } from "./helpers/test";
 
 import { lerCreds, loginComoAdmin } from "./helpers/login-admin";
 
