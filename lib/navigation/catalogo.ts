@@ -202,13 +202,17 @@ export const NAV_CATALOG = [
     // no Inbox. Sem `minRole`: `viewer` VÊ a fila (o worker já acha que só a
     // IA nunca deve mandar), e a aprovação é cobrada pela server action, com o
     // gate de `agent` que decide o efeito, não o que aparece.
+    //
+    // Mora no HUB do CRM ("Ver tudo em CRM"), não no sidebar: com ela lá o menu
+    // estoura a dobra de 900px por 13px (e2e `navegacao.spec.ts`), e a regra do
+    // `Sidebar.tsx` é criar/usar o hub, nunca raspar densidade.
     href: "/app/outreach",
     label: "Para aprovar",
     description: "E-mails que o agente preparou e que só saem com a sua aprovação.",
     icon: "Inbox",
     group: "crm",
     section: "O dia a dia da venda",
-    sidebar: true,
+    sidebar: false,
   },
   {
     // ⚠️ Esta tela nasceu porque a FERRAMENTA já existia sem ela. O agente de IA
