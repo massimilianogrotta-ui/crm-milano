@@ -13,6 +13,8 @@ export interface PropostaDaEseguire {
   subject: string | null;
   body: string;
   contactBlocked: boolean;
+  /** Nata con dry_run. Non diventa mai un invio reale. */
+  creataInProva: boolean;
 }
 
 export interface DipendenzeEsecuzione {
@@ -63,6 +65,19 @@ export async function eseguiDecisione(
       decided_by: d.userId,
       decided_at: ora,
       error: p.contactBlocked ? "contatto_bloccato" : null,
+    });
+    return ok ? { status: "rejected" } : { status: "non_pending" };
+  }
+
+  // Fail-closed, prima del tetto: una bozza nata in prova non parte mai per
+  // davvero, anche se il conteggio degli invii fallisse.
+  if (p.creataInProva && !deps.dryRun) {
+    const ok = await deps.salva({
+      expectStatus: "pending",
+      status: "rejected",
+      decided_by: d.userId,
+      decided_at: ora,
+      error: "creata_in_prova",
     });
     return ok ? { status: "rejected" } : { status: "non_pending" };
   }

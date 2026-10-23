@@ -49,7 +49,7 @@ export async function decidiProposta(id: string, azione: "approva" | "rifiuta"):
 
   const { data: row } = await supabase
     .from("outreach_proposals")
-    .select("id, organization_id, lead_id, contact_id, channel, kind, status, to_address, subject, body, contacts(is_blocked, phone_number)")
+    .select("id, organization_id, lead_id, contact_id, channel, kind, status, to_address, subject, body, dry_run, contacts(is_blocked, phone_number)")
     .eq("id", id)
     .eq("organization_id", ctx.org.orgId)
     .maybeSingle();
@@ -76,6 +76,7 @@ export async function decidiProposta(id: string, azione: "approva" | "rifiuta"):
       id: row.id, organizationId: row.organization_id, leadId: row.lead_id, contactId: row.contact_id,
       kind: row.kind, channel: row.channel, status: row.status, toAddress: row.to_address, subject: row.subject, body: row.body,
       contactBlocked: contatto?.is_blocked ?? false,
+      creataInProva: row.dry_run === true,
     },
     { azione, userId: ctx.user.id },
     {

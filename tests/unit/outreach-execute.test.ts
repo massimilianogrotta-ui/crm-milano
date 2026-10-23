@@ -5,6 +5,7 @@ import { eseguiDecisione, testoInHtml, type DipendenzeEsecuzione, type PropostaD
 const P: PropostaDaEseguire = {
   id: "p1", organizationId: "o1", leadId: "l1", contactId: "c1", kind: "first_contact",
   channel: "email", status: "pending", toAddress: "info@x.it", subject: "S", body: "B", contactBlocked: false,
+  creataInProva: false,
 };
 
 function deps(over: Partial<DipendenzeEsecuzione> = {}): DipendenzeEsecuzione {
@@ -54,6 +55,28 @@ describe("eseguiDecisione", () => {
     expect(await eseguiDecisione(P, { azione: "approva", userId: "u1" }, d)).toMatchObject({ status: "limite_giorno" });
     expect(d.send).not.toHaveBeenCalled();
     expect(d.salva).not.toHaveBeenCalled();
+  });
+  it("bozza nata in prova non diventa invio reale", async () => {
+    const d = deps({ contaInviiVeri: vi.fn(async () => { throw new Error("non deve contare"); }) });
+    const r = await eseguiDecisione({ ...P, creataInProva: true }, { azione: "approva", userId: "u1" }, d);
+    expect(r).toEqual({ status: "rejected" });
+    expect(d.send).not.toHaveBeenCalled();
+    expect(d.salva).toHaveBeenCalledWith(expect.objectContaining({
+      expectStatus: "pending", status: "rejected", error: "creata_in_prova", decided_by: "u1",
+    }));
+  });
+  it("bozza in prova già decisa da un altro non viene reinviata", async () => {
+    const d = deps({ salva: vi.fn(async () => false) });
+    const r = await eseguiDecisione({ ...P, creataInProva: true }, { azione: "approva", userId: "u1" }, d);
+    expect(r.status).toBe("non_pending");
+    expect(d.send).not.toHaveBeenCalled();
+  });
+  it("bozza nata in prova, ancora in prova, resta una nota senza invio", async () => {
+    const d = deps({ dryRun: true });
+    const r = await eseguiDecisione({ ...P, creataInProva: true }, { azione: "approva", userId: "u1" }, d);
+    expect(r.status).toBe("sent");
+    expect(d.send).not.toHaveBeenCalled();
+    expect(d.nota).toHaveBeenCalledWith(expect.stringContaining("modalità prova"));
   });
   it("in prova il tetto reale non si applica", async () => {
     const d = deps({ dryRun: true, contaInviiVeri: vi.fn(async () => 5) });
