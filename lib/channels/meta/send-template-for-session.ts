@@ -15,11 +15,18 @@
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import { resolveMetaCreds } from "./credentials";
 import { sendTemplate } from "./send-template";
 
 export interface SendTemplateForSessionInput {
   beforeSend?: () => Promise<void>;
   organizationId: string;
+  /**
+   * `channel_sessions.meta_phone_number_id` — a chave da credencial desta
+   * organização. Vazio cai no env, que é o fallback de instalação de um número
+   * só, nunca a credencial de outra organização.
+   */
+  phoneNumberId?: string;
   /** Destinatário em dígitos E.164, já resolvido pelo adapter. */
   to: string;
   name: string;
@@ -43,6 +50,16 @@ export async function sendTemplateForSession(
     throw new Error("template_incompleto: nome e idioma são obrigatórios em type=template");
   }
 
+  // Sessão desta organização primeiro. Sem credencial nenhuma, não há rede:
+  // o prefixo é o que o handler traduz em `queued`, não em `failed`.
+  const creds = await resolveMetaCreds(db, {
+    organizationId: input.organizationId,
+    phoneNumberId: input.phoneNumberId ?? "",
+  });
+  if (!creds) {
+    throw new Error("meta_not_configured: sem credencial da sessao nem do ambiente");
+  }
+
   const { data: linha, error } = await db
     .from("meta_templates")
     .select("name, language, status, contract_hash, components")
@@ -55,9 +72,9 @@ export async function sendTemplateForSession(
 
   await input.beforeSend?.();
   const resultado = await sendTemplate({
-    phoneNumberId: process.env.META_PHONE_NUMBER_ID ?? "",
-    token: process.env.META_SYSTEM_USER_TOKEN ?? "",
-    graphVersion: process.env.META_GRAPH_VERSION ?? "v22.0",
+    phoneNumberId: creds.phoneNumberId,
+    token: creds.token,
+    graphVersion: creds.graphVersion,
     to: input.to,
     binding: {
       name: input.name,

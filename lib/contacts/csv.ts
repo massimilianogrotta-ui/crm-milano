@@ -1,4 +1,5 @@
-import { normalizePhoneBR } from "@/lib/webhooks/inbound";
+import { normalizePhone } from "@/lib/webhooks/inbound";
+import type { PaisTelefone } from "@/lib/phones/pais";
 /**
  * Parser de CSV para importação de contatos — RFC 4180, zero dependências.
  *
@@ -212,6 +213,7 @@ const HEADER_ALIASES: Record<string, readonly string[]> = {
   cpf: ["cpf"],
   birthdate: ["birthdate", "nascimento", "data_de_nascimento", "aniversario"],
   tags: ["tags", "etiquetas", "grupos"],
+  consent: ["consent", "consentimiento", "consentimento", "marketing_consent", "opt_in"],
 };
 
 function normalizaHeader(h: string): string {
@@ -282,8 +284,31 @@ export interface LinhaNormalizada {
  * Decisão do dono do produto, 2026-08-24: o público é brasileiro, então assumir
  * `+55` é a leitura certa de uma planilha sem DDI — e é o que a ingestão já fazia.
  */
-export function normalizaTelefone(raw: string): string | null {
-  return normalizePhoneBR(raw);
+export function normalizaTelefone(raw: string, pais: PaisTelefone = "BR"): string | null {
+  return normalizePhone(raw, pais);
+}
+
+const CONSENTIMENTO_SIM = new Set([
+  "si",
+  "sí",
+  "yes",
+  "sim",
+  "true",
+  "1",
+  "granted",
+  "opt-in",
+  "optin",
+  "acepto",
+  "aceito",
+]);
+
+/** `true` concede, `false` é recusa explícita (não grava grant), `undefined` ignora a célula. */
+export function lerConsentimentoDePlanilha(raw: string): boolean | undefined {
+  const valor = raw.trim().toLowerCase();
+  if (!valor) return undefined;
+  if (CONSENTIMENTO_SIM.has(valor)) return true;
+  if (["no", "não", "nao", "false", "0", "denied"].includes(valor)) return false;
+  return undefined;
 }
 
 /**
@@ -322,7 +347,8 @@ export function mapLinha(
   cells: string[],
   indices: Record<string, number>,
   t?: (text: string) => string,
-): { contato: LinhaNormalizada; motivo: string | null } {
+  pais: PaisTelefone = "BR",
+): { contato: LinhaNormalizada; motivo: string | null; marketingConsent?: boolean } {
   const _t = t || ((x) => x);
   const get = (campo: string): string => {
     const idx = indices[campo];
@@ -346,7 +372,7 @@ export function mapLinha(
 
   const phoneRaw = get("phone_number");
   if (phoneRaw !== "") {
-    const phone = normalizaTelefone(phoneRaw);
+    const phone = normalizaTelefone(phoneRaw, pais);
     if (phone === null) {
       return {
         contato: {},
@@ -388,5 +414,6 @@ export function mapLinha(
     if (tags.length > 0) contato.tags = tags;
   }
 
-  return { contato, motivo: null };
+  const marketingConsent = lerConsentimentoDePlanilha(get("consent"));
+  return { contato, motivo: null, ...(marketingConsent === undefined ? {} : { marketingConsent }) };
 }

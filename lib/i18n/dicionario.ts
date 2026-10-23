@@ -88,7 +88,7 @@ export const DICIONARIO: Traducoes = {
   "Acesso da IA no WhatsApp": { es: "Acceso de la IA en WhatsApp" , it: "Accesso IA su WhatsApp", en: "AI access on WhatsApp"},
   "Teste com pessoas de confiança antes de liberar o atendimento automático.": { es: "Prueba con personas de confianza antes de habilitar la atención automática." , it: "Testa con persone di fiducia prima di aprire l'assistenza automatica al pubblico.", en: "Test with people you trust before opening automated support to the public."},
   "Não foi possível carregar o acesso da IA.": { es: "No se pudo cargar el acceso de la IA." , it: "Impossibile caricare l'accesso IA.", en: "Couldn't load AI access."},
-  "Use um telefone com DDI por linha, por exemplo +5511999998888.": { es: "Usa un teléfono con prefijo internacional por línea, por ejemplo +5511999998888." , it: "Usa un telefono con prefisso internazionale per riga, ad esempio +5511999998888.", en: "Use a phone with a country code per line, for example +5511999998888."},
+  "Use um telefone com DDI por linha, por exemplo +5511999998888.": { es: "Usa un teléfono con prefijo internacional por línea, por ejemplo +593 99 000 0000." , it: "Usa un telefono con prefisso internazionale per riga, ad esempio +39 333 000 0000.", en: "Use a phone with a country code per line, for example +1 555 000 0000."},
   "Acesso da IA atualizado.": { es: "Acceso de la IA actualizado." , it: "Accesso IA aggiornato.", en: "AI access updated."},
   "Não foi possível confirmar o salvamento. Reabra este painel para conferir a configuração.": { es: "No se pudo confirmar el guardado. Vuelve a abrir este panel para comprobar la configuración." , it: "Impossibile confermare il salvataggio. Riapri questo pannello per verificare la configurazione.", en: "Couldn't confirm the save. Reopen this panel to check the setting."},
   "Somente os números desta lista podem receber respostas automáticas neste canal.": { es: "Solo los números de esta lista pueden recibir respuestas automáticas en este canal." , it: "Solo i numeri di questo elenco possono ricevere risposte automatiche su questo canale.", en: "Only numbers on this list can receive automatic replies on this channel."},
@@ -9911,9 +9911,29 @@ export const DICIONARIO: Traducoes = {
   "e-mail inválido: ": { es: "e-mail inválido: ", it: "e-mail non valida: ", en: "invalid e-mail: "},
   "telefone inválido: ": { es: "teléfono inválido: ", it: "telefono non valido: ", en: "invalid phone: "},
   " (use DDI+DDD+número, ex.: +5511999998888)": {
-    es: " (usa código de país+código de área+número, ej.: +5511999998888)",
-    it: " (usa prefisso internazionale+prefisso+numero, es.: +5511999998888)",
-    en: " (use country code+area code+number, e.g.: +5511999998888)"
+    es: " (usa código de país+código de área+número, ej.: +593 99 000 0000)",
+    it: " (usa prefisso internazionale+prefisso+numero, es.: +39 333 000 0000)",
+    en: " (use country code+area code+number, e.g.: +1 555 000 0000)"
+  },
+  "A janela de 24 horas está fechada. Envie um modelo aprovado para continuar a conversa.": {
+    es: "La ventana de 24 horas está cerrada. Envía una plantilla aprobada para seguir la conversación.",
+    it: "La finestra di 24 ore è chiusa. Invia un modello approvato per continuare la conversazione.",
+    en: "The 24-hour window is closed. Send an approved template to continue the conversation."
+  },
+  "Este contato não autorizou mensagens de marketing.": {
+    es: "Este contacto no autorizó mensajes de marketing.",
+    it: "Questo contatto non ha autorizzato messaggi di marketing.",
+    en: "This contact has not allowed marketing messages."
+  },
+  "consentimento não gravado": {
+    es: "consentimiento no guardado",
+    it: "consenso non salvato",
+    en: "consent was not saved"
+  },
+  "Informe a origem do consentimento.": {
+    es: "Indica el origen del consentimiento.",
+    it: "Indica l'origine del consenso.",
+    en: "Provide the source of the consent."
   },
   "linha sem telefone nem e-mail": { es: "línea sin teléfono ni e-mail", it: "riga senza telefono né e-mail", en: "row without phone or e-mail"},
   "Cabeçalho inválido:": { es: "Cabecera inválida:", it: "Intestazione non valida:", en: "Invalid header:"},

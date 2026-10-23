@@ -34,6 +34,8 @@ import {
   mapLinha,
   parseCsv,
 } from "@/lib/contacts/csv";
+import { registrarConsentimento } from "@/lib/contacts/consentimento";
+import { paisDaOrganizacao } from "@/lib/phones/pais";
 import { contactCreateSchema, isValidCpf } from "@/lib/schemas";
 import { phoneLookupVariants } from "@/lib/channels/phone-variants";
 import { createClient } from "@/lib/supabase/server";
@@ -135,13 +137,14 @@ export async function POST(req: NextRequest): Promise<Response> {
     );
   }
 
-  const candidatos: Array<{ linha: number; contato: Record<string, unknown> }> = [];
+  const paisTelefone = await paisDaOrganizacao(supabase, orgId);
+  const candidatos: Array<{ linha: number; contato: Record<string, unknown>; marketingConsent?: boolean }> = [];
   const errors: LinhaErro[] = [];
   const vistosNoArquivo = new Set<string>();
 
   for (let i = 0; i < dataRows.length; i++) {
     const linha = i + 2; // 1-based contando o cabeçalho — bate com o editor de planilhas.
-    const { contato, motivo } = mapLinha(dataRows[i]!, indices, t);
+    const { contato, motivo, marketingConsent } = mapLinha(dataRows[i]!, indices, t, paisTelefone);
     if (motivo !== null) {
       errors.push({ linha, motivo });
       continue;
@@ -162,7 +165,11 @@ export async function POST(req: NextRequest): Promise<Response> {
       errors.push({ linha, motivo: primeiro?.message ?? t("dados inválidos") });
       continue;
     }
-    candidatos.push({ linha, contato: parsed.data as Record<string, unknown> });
+    candidatos.push({
+      linha,
+      contato: parsed.data as Record<string, unknown>,
+      marketingConsent: marketingConsent === true,
+    });
   }
 
   if (candidatos.length === 0) {
@@ -215,7 +222,7 @@ export async function POST(req: NextRequest): Promise<Response> {
   let imported = 0;
   let skippedDuplicates = 0;
 
-  for (const { linha, contato } of candidatos) {
+  for (const { linha, contato, marketingConsent } of candidatos) {
     const phone = contato.phone_number as string | undefined;
     const email = contato.email as string | undefined;
     if (
@@ -264,6 +271,27 @@ export async function POST(req: NextRequest): Promise<Response> {
     }
 
     imported += 1;
+    if (marketingConsent && (criado as { id: string }).id) {
+      try {
+        await registrarConsentimento(supabase, {
+          organizationId: orgId,
+          contactId: (criado as { id: string }).id,
+          canal: "whatsapp",
+          fuente: "import_csv",
+        });
+        await audit({
+          action: "contact.consent_granted",
+          actorUserId: user.id,
+          organizationId: orgId,
+          resourceType: "contact",
+          resourceId: (criado as { id: string }).id,
+          requestId,
+          metadata: { canal: "whatsapp", fuente: "import_csv", actor_type: "user" },
+        });
+      } catch {
+        errors.push({ linha, motivo: t("consentimento não gravado") });
+      }
+    }
     if (phone) existentes.add(`tel:${phone}`);
     if (email) existentes.add(`email:${email.toLowerCase()}`);
 

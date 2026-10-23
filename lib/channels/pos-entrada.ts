@@ -41,8 +41,10 @@
 import { audit } from "@/lib/audit";
 import { garantirLeadDaConversa } from "@/lib/leads/nascimento-do-lead";
 import { logger } from "@/lib/logger";
+import { redactPhones } from "@/lib/phones/mask";
 import type { createAdminClient } from "@/lib/supabase/admin";
 import { ehPedidoDeOptOut } from "@/lib/opt-out/deteccao";
+import { confirmarSaidaSeJanelaAberta } from "./meta/confirmacao-de-saida";
 import { acelerarPipelineDeEventos } from "@/lib/dev/kick-local-pipeline";
 import { autorizarContatoParaIA } from "@/lib/ai/elegibilidade/autorizacao";
 import { casarCampanha, lerCampanhas } from "@/lib/ai/elegibilidade/campanha";
@@ -97,10 +99,12 @@ export interface EntradaDeMensagem {
   /** Correlaciona a linha de auditoria com a request que a originou. */
   requestId?: string;
   /**
-   * Rótulo da origem, só para `metadata` e log.
+   * Rótulo da origem, para `metadata` e log — e para UMA decisão.
    *
-   * Não é decisão: nenhum passo abaixo ramifica por este valor. Serve para que,
-   * lendo o `event_log` meses depois, se saiba por onde a mensagem entrou.
+   * A confirmação em espanhol de opt-out só sai quando a origem é
+   * `meta_webhook` (e a organização declarou Equador, e a janela está aberta).
+   * Qualquer outra origem bloqueia e não responde. Ramificar o resto por aqui
+   * voltaria a fazer o canal decidir o que o CRM faz.
    */
   origem: string;
 }
@@ -202,6 +206,20 @@ async function avaliarCampanha(admin: Admin, entrada: EntradaDeMensagem): Promis
  */
 async function aplicarOptOut(admin: Admin, entrada: EntradaDeMensagem): Promise<void> {
   if (!ehPedidoDeOptOut(entrada.texto)) return;
+
+  // Antes do bloqueio: o caminho normal de envio recusa quem já está bloqueado,
+  // e esta frase é a resposta ao pedido. Falha aqui não pode impedir o bloqueio.
+  if (entrada.origem === "meta_webhook") {
+    try {
+      await confirmarSaidaSeJanelaAberta(admin, entrada);
+    } catch (err) {
+      logger.warn("pos-entrada: confirmacao de saida falhou (o bloqueio segue)", {
+        organization_id: entrada.organizationId,
+        contact_id: entrada.contactId,
+        detail: err instanceof Error ? redactPhones(err.message).slice(0, 160) : "desconhecido",
+      });
+    }
+  }
 
   try {
     const agora = new Date().toISOString();

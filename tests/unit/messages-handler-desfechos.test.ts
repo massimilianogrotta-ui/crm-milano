@@ -32,8 +32,28 @@ const WAHA_BASE = 'http://localhost:3030';
 const signedUrl = vi.fn<() => Promise<{ data: { signedUrl: string } | null; error: { message: string } | null }>>(
   async () => ({ data: { signedUrl: 'https://signed.example/a.jpg' }, error: null }),
 );
+/** Espelho que o adapter lê pelo admin — o mesmo `templateRow` do fake do handler. */
+const espelho: { template: Record<string, unknown> | null } = { template: null };
 vi.mock('@/lib/supabase/admin', () => ({
-  createAdminClient: () => ({ storage: { from: () => ({ createSignedUrl: signedUrl }) } }),
+  createAdminClient: () => ({
+    storage: { from: () => ({ createSignedUrl: signedUrl }) },
+    rpc: async () => ({ data: null, error: null }),
+    from: (table: string) => {
+      const cadeia: Record<string, unknown> = {};
+      const terminal = async () =>
+        table === 'meta_templates'
+          ? { data: espelho.template, error: null }
+          : { data: null, error: null };
+      cadeia.select = () => cadeia;
+      cadeia.eq = () => cadeia;
+      cadeia.is = () => cadeia;
+      cadeia.in = () => cadeia;
+      cadeia.order = () => cadeia;
+      cadeia.limit = () => cadeia;
+      cadeia.maybeSingle = terminal;
+      return { select: () => cadeia };
+    },
+  }),
 }));
 // Audit é fire-and-forget e escreve em outra tabela; fora do escopo dos desfechos.
 vi.mock('@/lib/audit', () => ({ audit: vi.fn(async () => {}) }));
@@ -50,6 +70,8 @@ interface ConversationShape {
   provider?: string;
   /** Canal excluído pelo usuário (migration 0106) — a linha sobrevive, o canal não. */
   archivedAt?: string | null;
+  /** `null` = janela fechada no canal oficial. Os outros canais não consultam. */
+  lastInboundAt?: string | null;
 }
 
 function conversationRow(shape: ConversationShape = {}): Row {
@@ -58,6 +80,7 @@ function conversationRow(shape: ConversationShape = {}): Row {
     organization_id: ORG,
     contact_id: CONTACT,
     channel_session_id: SESSION,
+    last_inbound_at: shape.lastInboundAt === undefined ? null : shape.lastInboundAt,
     is_group: shape.isGroup ?? false,
     group_chat_id: shape.groupChatId ?? null,
     contacts: {
@@ -92,6 +115,7 @@ function makeSupabase(
   /** `semColunaArquivada`: banco em que a migration 0106 ainda não rodou. */
   opts: { semColunaArquivada?: boolean; channelMetadata?: Row } = {},
 ) {
+  espelho.template = templateRow;
   const state: { message: Row | null } = { message: null };
 
   const client = {
@@ -393,7 +417,9 @@ describe('sendMessageHandler — os 6 desfechos do envio', () => {
     vi.stubGlobal('fetch', fetchMock);
 
     const msg = await sendMessageHandler(
-      makeSupabase(conversationRow({ provider: 'meta_cloud' })),
+      makeSupabase(
+        conversationRow({ provider: 'meta_cloud', lastInboundAt: new Date().toISOString() }),
+      ),
       ctx,
       textInput(),
     );
