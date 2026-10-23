@@ -269,6 +269,23 @@ const schema = z.object({
   OUTREACH_REPLY_TO: z.union([z.literal(""), z.email()]).optional().default(""),
   OUTREACH_WA_FOLLOWUP: z.string().optional().default(""),
   OUTREACH_WA_FOLLOWUP_GIORNI: z.coerce.number().int().positive().optional().default(10),
+  /**
+   * Teto de envios REAIS de outreach por dia. Vazio, ausente ou qualquer coisa
+   * que não seja um inteiro decimal (`5`, `-3`, `  12  `) vale 5: este schema
+   * NÃO lança — um throw aqui é 500 em toda página. Espaços sozinhos, `abc`,
+   * `1.5` e `0x10` caem no 5 (`Number("0x10")` seria 16, e não é decimal).
+   * O intervalo [1, 30] mora em `tettoInvii()`: "500" fica 500 aqui e vira 30
+   * na hora do envio. "0" e negativo passam inteiros e o clamp os leva a 1.
+   */
+  OUTREACH_TETTO_INVII: z.preprocess(
+    (val) => {
+      if (val === undefined || val === null) return undefined;
+      const s = String(val).trim();
+      if (!/^[+-]?\d+$/.test(s)) return undefined;
+      return Number(s);
+    },
+    z.number().int().default(5).catch(5),
+  ),
 
   /**
    * E-mail de suporte que a instalação mostra ao CLIENTE FINAL (tela de conta
