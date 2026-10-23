@@ -15,4 +15,8 @@ giro sai no máximo um e-mail por contato, por endereço e por domínio que não
 Um primeiro contato real já enviado para aquele endereço não nasce de novo. Uma proposta
 criada em modo de prova não vira envio real se alguém aprovar depois de desligar a prova.
 
-Enquanto OUTREACH_DRY_RUN não for exatamente false, nenhum e-mail real sai.
+Enquanto OUTREACH_DRY_RUN não for exatamente false, nenhum e-mail real sai. A suíte
+Playwright força esse dry-run e deixa a chave de e-mail vazia, para um arquivo local
+de desenvolvimento não religar o envio. PEC de gestore italiano (também em subdomínio)
+sai da fila mesmo com o endereço marcado como verificado. Um envio real que falhou no
+dia conta no teto: um timeout pode chegar depois de o provedor já ter aceitado.

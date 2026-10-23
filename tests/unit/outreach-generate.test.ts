@@ -110,6 +110,16 @@ describe("generaProposte", () => {
     expect(inserts).toHaveLength(0);
   });
 
+  it("cerca e salva l'indirizzo senza spazi e in minuscolo", async () => {
+    const { admin, leads, colonne, blocos, inserts } = client(1);
+    leads[0]!.contacts.email = "  Info@Studio0.TEST ";
+    const esito = await generaProposte(admin, "org-1");
+    expect(esito.create).toBe(1);
+    const indirizzi = blocos.filter((_, i) => colonne[i] === "to_address").flat();
+    expect(indirizzi).toEqual(["info@studio0.test"]);
+    expect(inserts[0]?.to_address).toBe("info@studio0.test");
+  });
+
   it("un first_contact di prova sullo stesso indirizzo non blocca", async () => {
     const { admin } = client(1, {
       storico: [{

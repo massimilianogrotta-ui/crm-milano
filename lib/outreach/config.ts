@@ -31,6 +31,17 @@ export function tettoInvii(raw: number = env.OUTREACH_TETTO_INVII): number {
   if (!Number.isInteger(raw)) return 5;
   return Math.min(30, Math.max(1, raw));
 }
+
+/**
+ * Stati che consumano il tetto degli invii reali, per organizzazione.
+ * `failed` entra tutto: non c'è un codice che isoli il timeout, e un timeout
+ * può arrivare dopo che il provider ha già accettato. Il tetto non è globale.
+ */
+export const STATI_NEL_TETTO_INVII = [
+  { status: "sent", tempo: "sent_at" },
+  { status: "approved", tempo: "decided_at" },
+  { status: "failed", tempo: "decided_at" },
+] as const;
 export const OUTREACH_WA_FOLLOWUP_GIORNI = env.OUTREACH_WA_FOLLOWUP_GIORNI;
 export const outreachWaFollowup = () => env.OUTREACH_WA_FOLLOWUP === "true";
 export function mittenteOutreach(fromEmail = env.OUTREACH_FROM_EMAIL, replyTo = env.OUTREACH_REPLY_TO) {

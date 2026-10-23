@@ -34,19 +34,46 @@ export interface IngressoEsclusione {
   contactTags: string[] | null;
 }
 
-const DOMINI_PEC = ["pec.it", "legalmail.it", "impresa.italia.it"] as const;
+/**
+ * Gestori di posta certificata. Il match è sul suffisso (`pec.it` e
+ * `mx.pec.it`), mai sulla sottostringa: `studiospeciale.it` contiene «pec»
+ * e non è una PEC. Una label che È esattamente `pec` resta esclusa
+ * (`pec.studio.it`).
+ */
+const DOMINI_PEC = [
+  "pec.it",
+  "legalmail.it",
+  "impresa.italia.it",
+  "postecert.it",
+  "postacert.it",
+  "sicurezzapostale.it",
+  "actaliscertymail.it",
+] as const;
 
 const FREEMAIL_ESATTI = new Set([
   "gmail.com",
+  "googlemail.com",
   "libero.it",
   "icloud.com",
+  "me.com",
   "alice.it",
   "tiscali.it",
   "virgilio.it",
+  "tin.it",
+  "msn.com",
+  "aol.com",
+  "email.it",
+  "fastwebnet.it",
+  "inwind.it",
+  "iol.it",
+  "proton.me",
 ]);
 
-/** `hotmail.*`, `yahoo.*`, `outlook.*`, `live.*`: la label, non un prefisso del nome. */
-const FREEMAIL_LABEL = new Set(["hotmail", "yahoo", "outlook", "live"]);
+/**
+ * La label, non un prefisso del nome: `hotmail.it` sì, `hotmailstudio.it` no.
+ * `gmx` vale per ogni TLD (`gmx.com`, `gmx.de`).
+ */
+const FREEMAIL_LABEL = new Set(["hotmail", "yahoo", "outlook", "live", "gmx"]);
 
 /**
  * Caselle di ruolo. Un locale `nome.cognome` che usa una di queste non è una
@@ -98,8 +125,9 @@ function partiEmail(email: string): { local: string; domain: string } | null {
 }
 
 function dominioPec(domain: string): boolean {
-  if (DOMINI_PEC.some((d) => domain === d || domain.endsWith(`.${d}`))) return true;
-  return domain.split(".").some((label) => label.includes("pec"));
+  const d = domain.trim().toLowerCase();
+  if (DOMINI_PEC.some((suffix) => d === suffix || d.endsWith(`.${suffix}`))) return true;
+  return d.split(".").some((label) => label === "pec");
 }
 
 function nominativa(local: string): boolean {

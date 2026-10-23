@@ -105,7 +105,11 @@ export async function generaProposte(admin: SupabaseClient, orgId: string, ora =
   // Prima i lead, poi contatto e indirizzo: un primo contatto vero su un altro
   // lead dello stesso contatto non deve rinascere qui.
   async function leggi(colonna: "lead_id" | "contact_id" | "to_address", ids: string[]): Promise<string | null> {
-    const unici = [...new Set(ids.map((id) => id.trim()).filter((id) => id.length > 0))];
+    const unici = [...new Set(ids.map((id) => {
+      const pulito = id.trim();
+      // L'indirizzo si confronta in minuscolo. Il «+tag» non si toglie.
+      return colonna === "to_address" ? pulito.toLowerCase() : pulito;
+    }).filter((id) => id.length > 0))];
     for (let i = 0; i < unici.length; i += BLOCCO_STORICO) {
       const { data: storicoRows, error: eStorico } = await admin
         .from("outreach_proposals")
@@ -135,7 +139,7 @@ export async function generaProposte(admin: SupabaseClient, orgId: string, ora =
   if (eLead) return errore("storico", eLead, candidati.length);
   const eContatto = await leggi("contact_id", candidati.flatMap((c) => (c.contactId ? [c.contactId] : [])));
   if (eContatto) return errore("storico", eContatto, candidati.length);
-  const eIndirizzo = await leggi("to_address", candidati.flatMap((c) => (c.email ? [c.email.trim()] : [])));
+  const eIndirizzo = await leggi("to_address", candidati.flatMap((c) => (c.email ? [c.email.trim().toLowerCase()] : [])));
   if (eIndirizzo) return errore("storico", eIndirizzo, candidati.length);
 
   const nuove = scegliProposte(candidati, storico, ora);

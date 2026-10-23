@@ -77,6 +77,19 @@ describe("scegliProposte", () => {
     }));
     expect(scegliProposte(tanti, [], ORA)).toHaveLength(10);
   });
+  it("salva l'indirizzo senza spazi e in minuscolo; il +tag resta", () => {
+    const r = scegliProposte([cand({ email: "  Info+News@Bianchi.IT " })], [], ORA);
+    expect(r).toHaveLength(1);
+    expect(r[0]?.toAddress).toBe("info+news@bianchi.it");
+  });
+  it("maiuscole e spazi sono lo stesso indirizzo nel giro", () => {
+    const r = scegliProposte([
+      cand({ leadId: "a", contactId: "c1", email: "info@bianchi.it" }),
+      cand({ leadId: "b", contactId: "c2", email: "  INFO@Bianchi.it " }),
+    ], [], ORA);
+    expect(r.map((p) => p.leadId)).toEqual(["a"]);
+    expect(r.esclusi.contatto_condiviso).toBe(1);
+  });
   it("4 lead sullo stesso contatto: vince il più vecchio, gli altri sono contatto condiviso", () => {
     const leads = [0, 1, 2, 3].map((i) => cand({ leadId: `l${i}`, contactId: "stesso", email: "info@bianchi.it" }));
     const r = scegliProposte(leads, [], ORA);

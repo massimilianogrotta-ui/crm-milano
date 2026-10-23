@@ -64,6 +64,10 @@ export function cellulareItaliano(raw: string | null): string | null {
   return /^3\d{9}$/.test(digits) ? `+39${digits}` : null;
 }
 
+/**
+ * Trim e minuscolo, nient'altro. Il «+tag» (`info+news@studio.it`) resta:
+ * non è un alias della casella senza tag, e due tag diversi non si fondono.
+ */
 function chiaveEmail(email: string): string {
   return email.trim().toLowerCase();
 }
@@ -170,7 +174,7 @@ export function scegliProposte(
       kind,
       channel,
       templateRef: r.templateRef,
-      toAddress: channel === "wa" ? cellulareItaliano(c.phone)! : c.email,
+      toAddress: channel === "wa" ? cellulareItaliano(c.phone)! : chiaveEmail(c.email),
       subject: r.subject,
       body: r.body,
       reason: `${reason} · segmento ${segmento}`,

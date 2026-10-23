@@ -119,6 +119,15 @@ describe("guardia: la suite non invia", () => {
     expect(invio).toMatch(/from ["']@\/lib\/email\/resend["']/);
   });
 
+  it("l'e2e forza il dry-run e una chiave Resend vuota", () => {
+    const sh = readFileSync(resolve(process.cwd(), "scripts/gerar-env-e2e.sh"), "utf8");
+    expect(sh).toMatch(/^OUTREACH_DRY_RUN=true$/m);
+    expect(sh).toMatch(/^RESEND_API_KEY=$/m);
+    const pw = readFileSync(resolve(process.cwd(), "playwright.config.ts"), "utf8");
+    expect(pw).toContain('env.OUTREACH_DRY_RUN = "true"');
+    expect(pw).toContain('env.RESEND_API_KEY = ""');
+  });
+
   it("generaProposte con admin finto non chiama sendEmail", async () => {
     const esito = await generaProposte(adminFinto() as never, "org-di-test");
     expect(esito.stato).toBe("ok");

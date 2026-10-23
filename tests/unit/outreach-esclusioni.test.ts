@@ -55,6 +55,14 @@ describe("motivoEsclusione", () => {
     expect(motivoEsclusione(ingresso({ email: "info@outlook.com" }))).toBe("freemail");
     expect(motivoEsclusione(ingresso({ email: "info@live.it" }))).toBe("freemail");
     expect(motivoEsclusione(ingresso({ email: "info@libero.it" }))).toBe("freemail");
+    for (const domain of [
+      "tin.it", "msn.com", "aol.com", "me.com", "email.it", "fastwebnet.it",
+      "inwind.it", "iol.it", "googlemail.com", "proton.me", "gmx.com", "gmx.de",
+    ]) {
+      expect(motivoEsclusione(ingresso({ email: `info@${domain}` })), domain).toBe("freemail");
+    }
+    expect(motivoEsclusione(ingresso({ email: "info@gmxmail.com" }))).not.toBe("freemail");
+    expect(motivoEsclusione(ingresso({ email: "info@protonmail.com" }))).not.toBe("freemail");
   });
 
   it("titoli che sono articoli", () => {
@@ -63,11 +71,38 @@ describe("motivoEsclusione", () => {
     expect(motivoEsclusione(ingresso({ title: "Come scegliere lo spazzolino?" }))).toBe("titolo_articolo");
   });
 
-  it("pec: dominio noto o label che contiene pec", () => {
-    expect(motivoEsclusione(ingresso({ email: "x@studio.pec.it" }))).toBe("pec");
-    expect(motivoEsclusione(ingresso({ email: "x@pec.studio.it" }))).toBe("pec");
-    expect(motivoEsclusione(ingresso({ email: "info@legalmail.it" }))).toBe("pec");
-    expect(motivoEsclusione(ingresso({ email: "posta@impresa.italia.it" }))).toBe("pec");
+  it("pec: suffisso del gestore o label esatta pec, anche con email-verificata", () => {
+    const domini = [
+      "studio.pec.it",
+      "pec.studio.it",
+      "legalmail.it",
+      "mx.legalmail.it",
+      "impresa.italia.it",
+      "posta.impresa.italia.it",
+      "postecert.it",
+      "mx.postecert.it",
+      "a.b.postecert.it",
+      "postacert.it",
+      "mx.postacert.it",
+      "sicurezzapostale.it",
+      "mx.sicurezzapostale.it",
+      "actaliscertymail.it",
+      "cert.actaliscertymail.it",
+    ];
+    for (const domain of domini) {
+      expect(motivoEsclusione(ingresso({
+        email: `info@${domain}`,
+        title: "Studio",
+        contactTags: ["email-verificata"],
+      })), domain).toBe("pec");
+    }
+    expect(motivoEsclusione(ingresso({
+      email: "info@studiospeciale.it",
+      title: "Studio Speciale",
+      contactTags: ["email-verificata"],
+    }))).toBeNull();
+    expect(motivoEsclusione(ingresso({ email: "info@notpostecert.it", title: "Studio" }))).toBeNull();
+    expect(motivoEsclusione(ingresso({ email: "info@postecert.it.evil.test", title: "Studio" }))).toBeNull();
   });
 
   it("casella generica e dominio coerente: non si esclude", () => {

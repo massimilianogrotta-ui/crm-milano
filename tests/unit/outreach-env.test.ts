@@ -1,6 +1,9 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { mittenteOutreach, outreachDryRun } from "@/lib/outreach/config";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+
+import { mittenteOutreach, outreachDryRun, STATI_NEL_TETTO_INVII } from "@/lib/outreach/config";
 import { OUTREACH_SIGNATURE } from "@/lib/outreach/templates";
 import { fromAddress } from "@/lib/email/resend";
 
@@ -55,11 +58,24 @@ describe("tettoInvii", () => {
   });
 
   it("stringa vuota o non intera vale 5 e lo schema non lancia", async () => {
-    for (const valor of ["", "abc", "1.5"]) {
+    for (const valor of ["", "   ", "abc", "1.5", "0x10", "1e2"]) {
       const { tettoInvii, grezzo } = await carica(valor);
       expect(grezzo, valor).toBe(5);
       expect(tettoInvii()).toBe(5);
     }
+  });
+
+  it("un intero decimale con spazi vale quel numero", async () => {
+    const { tettoInvii, grezzo } = await carica("  12  ");
+    expect(grezzo).toBe(12);
+    expect(tettoInvii()).toBe(12);
+  });
+
+  it("i failed reali consumano il tetto, non solo sent e approved", () => {
+    expect(STATI_NEL_TETTO_INVII.map((s) => s.status)).toEqual(["sent", "approved", "failed"]);
+    expect(STATI_NEL_TETTO_INVII.find((s) => s.status === "failed")?.tempo).toBe("decided_at");
+    const src = readFileSync(join(process.cwd(), "app/actions/outreach/decide.ts"), "utf8");
+    expect(src).toContain("STATI_NEL_TETTO_INVII");
   });
 
   it("500 diventa 30 e zero o negativo diventano 1", async () => {
