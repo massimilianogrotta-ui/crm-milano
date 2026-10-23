@@ -104,8 +104,9 @@ function dominioPec(domain: string): boolean {
 
 function nominativa(local: string): boolean {
   const m = /^([\p{L}]{2,})[._-]([\p{L}]{2,})$/u.exec(local);
-  if (!m) return false;
-  const [a, b] = [m[1].toLowerCase(), m[2].toLowerCase()];
+  const a = m?.[1]?.toLowerCase();
+  const b = m?.[2]?.toLowerCase();
+  if (!a || !b) return false;
   return !LOCALI_GENERICI.has(a) && !LOCALI_GENERICI.has(b);
 }
 

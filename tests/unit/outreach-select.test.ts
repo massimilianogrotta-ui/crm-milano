@@ -93,16 +93,16 @@ describe("scegliProposte", () => {
     expect(r.esclusi.dominio_gia_nel_giro).toBe(1);
   });
   it("un first_contact reale sullo stesso indirizzo, anche di un altro lead, blocca", () => {
-    const storico: StoricoProposta[] = [{
+    const storico: StoricoProposta = {
       leadId: "altro", contactId: "c9", toAddress: "info@bianchi.it",
       kind: "first_contact", status: "sent", createdAt: giorniFa(40), sentAt: giorniFa(40), dryRun: false,
-    }];
-    const r = scegliProposte([cand({ contactId: "c1" })], storico, ORA);
+    };
+    const r = scegliProposte([cand({ contactId: "c1" })], [storico], ORA);
     expect(r).toHaveLength(0);
     expect(r.esclusi.gia_contattato).toBe(1);
     const perContatto = scegliProposte(
       [cand({ email: "info@altro.it", title: "Altro Studio" })],
-      [{ ...storico[0], toAddress: "info@altro.it", contactId: "c1" }],
+      [{ ...storico, toAddress: "info@altro.it", contactId: "c1" }],
       ORA,
     );
     expect(perContatto).toHaveLength(0);
