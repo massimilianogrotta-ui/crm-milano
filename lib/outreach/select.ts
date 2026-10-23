@@ -6,6 +6,7 @@ import {
   STAGE_DA_CONTATTARE,
   STAGE_IN_ATTESA,
 } from "@/lib/outreach/config";
+import { contatoriVuoti, motivoEsclusione, type ContatoriEsclusione } from "@/lib/outreach/esclusioni";
 import { renderOutreach, segmentoDelLead, type OutreachKind } from "@/lib/outreach/templates";
 
 export interface Candidato {
@@ -13,6 +14,7 @@ export interface Candidato {
   contactId: string | null;
   title: string | null;
   tags: string[] | null;
+  contactTags: string[] | null;
   email: string | null;
   phone: string | null;
   isBlocked: boolean;
@@ -40,6 +42,10 @@ export interface NuovaProposta {
   reason: string;
 }
 
+export interface ProposteScelte extends Array<NuovaProposta> {
+  esclusi: ContatoriEsclusione;
+}
+
 const GIORNO_MS = 86_400_000;
 
 export function cellulareItaliano(raw: string | null): string | null {
@@ -55,7 +61,7 @@ export function scegliProposte(
   storico: StoricoProposta[],
   ora: Date,
   opzioni: { waFollowup?: boolean; waGiorni?: number } = {},
-): NuovaProposta[] {
+): ProposteScelte {
   const waFollowup = opzioni.waFollowup ?? outreachWaFollowup();
   const waGiorni = opzioni.waGiorni ?? OUTREACH_WA_FOLLOWUP_GIORNI;
   const perLead = new Map<string, StoricoProposta[]>();
@@ -65,10 +71,16 @@ export function scegliProposte(
     perLead.set(s.leadId, lista);
   }
 
-  const out: NuovaProposta[] = [];
+  const esclusi = contatoriVuoti();
+  const out = Object.assign([] as NuovaProposta[], { esclusi }) as ProposteScelte;
   for (const c of candidati) {
     if (out.length >= MAX_PROPOSTE_PER_GIRO) break;
     if (c.isBlocked || !c.email) continue;
+    const motivo = motivoEsclusione(c);
+    if (motivo) {
+      esclusi[motivo] += 1;
+      continue;
+    }
 
     const mie = perLead.get(c.leadId) ?? [];
     const recente = mie.some((s) => !(c.stageSlug === STAGE_DA_CONTATTARE && s.kind === "first_contact" && s.status === "sent" && s.dryRun)

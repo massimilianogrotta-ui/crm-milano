@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { contatoriVuoti } from "@/lib/outreach/esclusioni";
 import { logger } from "@/lib/logger";
 import { generaProposte } from "@/lib/outreach/generate";
 
@@ -65,7 +66,7 @@ describe("generaProposte", () => {
   it("ferma il giro se lo storico fallisce", async () => {
     const { admin, blocos, inserts } = client(492, { erroreStorico: 3 });
     const esito = await generaProposte(admin, "org-1");
-    expect(esito).toEqual({ stato: "errore", candidati: 492, create: 0, errore: "storico indisponibile" });
+    expect(esito).toEqual({ stato: "errore", candidati: 492, create: 0, errore: "storico indisponibile", esclusi: contatoriVuoti() });
     expect(blocos).toHaveLength(3);
     expect(inserts).toHaveLength(0);
     expect(logger.warn).toHaveBeenCalled();
@@ -82,7 +83,7 @@ describe("generaProposte", () => {
   it("crea al massimo 10 proposte con 228 candidati e storico vuoto", async () => {
     const { admin, inserts } = client(228);
     const esito = await generaProposte(admin, "org-1");
-    expect(esito).toEqual({ stato: "ok", candidati: 228, create: 10 });
+    expect(esito).toEqual({ stato: "ok", candidati: 228, create: 10, esclusi: contatoriVuoti() });
     expect(inserts).toHaveLength(10);
   });
 });

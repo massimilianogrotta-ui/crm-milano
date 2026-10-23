@@ -11,6 +11,7 @@ function cand(over: Partial<Candidato> = {}): Candidato {
     contactId: "c1",
     title: "Studio Dentistico Bianchi",
     tags: [],
+    contactTags: [],
     email: "info@bianchi.it",
     phone: "+39 333 1234567",
     isBlocked: false,
