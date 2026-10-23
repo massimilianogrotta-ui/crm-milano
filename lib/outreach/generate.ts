@@ -17,6 +17,18 @@ export interface EsitoGenerazione {
 
 const BLOCCO_STORICO = 100;
 
+type RigaStorico = {
+  id: string;
+  lead_id: string;
+  contact_id: string | null;
+  to_address: string | null;
+  kind: StoricoProposta["kind"];
+  status: StoricoProposta["status"];
+  created_at: string;
+  sent_at: string | null;
+  dry_run: boolean;
+};
+
 /** Usa l'admin client: OGNI query filtra organization_id a mano (regola di lib/supabase/admin.ts). */
 export async function generaProposte(admin: SupabaseClient, orgId: string, ora = new Date()): Promise<EsitoGenerazione> {
   function errore(fase: string, message: string, candidati = 0, create = 0): EsitoGenerazione {
@@ -88,23 +100,43 @@ export async function generaProposte(admin: SupabaseClient, orgId: string, ora =
   });
 
   const storico: StoricoProposta[] = [];
+  const visti = new Set<string>();
   // Limita gli ID per richiesta: la query GET con tutti i lead supera il limite degli header.
-  for (let i = 0; i < candidati.length; i += BLOCCO_STORICO) {
-    const { data: storicoRows, error: eStorico } = await admin
-      .from("outreach_proposals")
-      .select("lead_id, kind, status, created_at, sent_at, dry_run")
-      .eq("organization_id", orgId)
-      .in("lead_id", candidati.slice(i, i + BLOCCO_STORICO).map((c) => c.leadId));
-    if (eStorico) return errore("storico", eStorico.message, candidati.length);
-    storico.push(...(storicoRows ?? []).map((s) => ({
-      leadId: s.lead_id as string,
-      kind: s.kind as StoricoProposta["kind"],
-      status: s.status as StoricoProposta["status"],
-      createdAt: s.created_at as string,
-      sentAt: (s.sent_at as string | null) ?? null,
-      dryRun: s.dry_run as boolean,
-    })));
+  // Prima i lead, poi contatto e indirizzo: un primo contatto vero su un altro
+  // lead dello stesso contatto non deve rinascere qui.
+  async function leggi(colonna: "lead_id" | "contact_id" | "to_address", ids: string[]): Promise<string | null> {
+    const unici = [...new Set(ids.map((id) => id.trim()).filter((id) => id.length > 0))];
+    for (let i = 0; i < unici.length; i += BLOCCO_STORICO) {
+      const { data: storicoRows, error: eStorico } = await admin
+        .from("outreach_proposals")
+        .select("id, lead_id, contact_id, to_address, kind, status, created_at, sent_at, dry_run")
+        .eq("organization_id", orgId)
+        .in(colonna, unici.slice(i, i + BLOCCO_STORICO));
+      if (eStorico) return eStorico.message;
+      for (const row of (storicoRows ?? []) as RigaStorico[]) {
+        if (visti.has(row.id)) continue;
+        visti.add(row.id);
+        storico.push({
+          leadId: row.lead_id,
+          contactId: row.contact_id ?? null,
+          toAddress: row.to_address ?? null,
+          kind: row.kind,
+          status: row.status,
+          createdAt: row.created_at,
+          sentAt: row.sent_at ?? null,
+          dryRun: row.dry_run,
+        });
+      }
+    }
+    return null;
   }
+
+  const eLead = await leggi("lead_id", candidati.map((c) => c.leadId));
+  if (eLead) return errore("storico", eLead, candidati.length);
+  const eContatto = await leggi("contact_id", candidati.flatMap((c) => (c.contactId ? [c.contactId] : [])));
+  if (eContatto) return errore("storico", eContatto, candidati.length);
+  const eIndirizzo = await leggi("to_address", candidati.flatMap((c) => (c.email ? [c.email.trim()] : [])));
+  if (eIndirizzo) return errore("storico", eIndirizzo, candidati.length);
 
   const nuove = scegliProposte(candidati, storico, ora);
   if (nuove.length === 0) return { stato: "ok", candidati: candidati.length, create: 0, esclusi: nuove.esclusi };
