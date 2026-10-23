@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { mittenteOutreach, outreachDryRun } from "@/lib/outreach/config";
+import { OUTREACH_SIGNATURE } from "@/lib/outreach/templates";
 import { fromAddress } from "@/lib/email/resend";
 
 describe("outreachDryRun", () => {
@@ -19,12 +20,12 @@ describe("outreachDryRun", () => {
 describe("mittenteOutreach", () => {
   it("usa indirizzo e reply-to dedicati quando impostati", () => {
     expect(mittenteOutreach("max@example.it", "reply@example.it"))
-      .toEqual({ fromName: "Max · All-io", fromEmail: "max@example.it", replyTo: "reply@example.it" });
-    expect(fromAddress("Max · All-io", "max@example.it")).toBe("Max · All-io <max@example.it>");
+      .toEqual({ fromName: OUTREACH_SIGNATURE, fromEmail: "max@example.it", replyTo: "reply@example.it" });
+    expect(fromAddress(OUTREACH_SIGNATURE, "max@example.it")).toBe(`${OUTREACH_SIGNATURE} <max@example.it>`);
   });
   it("lascia il mittente generale quando sono assenti", () => {
     expect(mittenteOutreach("", ""))
-      .toEqual({ fromName: "Max · All-io", fromEmail: undefined, replyTo: undefined });
+      .toEqual({ fromName: OUTREACH_SIGNATURE, fromEmail: undefined, replyTo: undefined });
   });
 });
 

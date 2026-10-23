@@ -1,4 +1,5 @@
 import { env } from "@/lib/env";
+import { OUTREACH_SIGNATURE } from "@/lib/outreach/templates";
 
 /**
  * Interruttore di sicurezza: qualsiasi valore diverso da "false" esatto
@@ -33,7 +34,7 @@ export function tettoInvii(raw: number = env.OUTREACH_TETTO_INVII): number {
 export const OUTREACH_WA_FOLLOWUP_GIORNI = env.OUTREACH_WA_FOLLOWUP_GIORNI;
 export const outreachWaFollowup = () => env.OUTREACH_WA_FOLLOWUP === "true";
 export function mittenteOutreach(fromEmail = env.OUTREACH_FROM_EMAIL, replyTo = env.OUTREACH_REPLY_TO) {
-  return { fromName: "Max · All-io", fromEmail: fromEmail || undefined, replyTo: replyTo || undefined };
+  return { fromName: OUTREACH_SIGNATURE, fromEmail: fromEmail || undefined, replyTo: replyTo || undefined };
 }
 export const STAGE_DA_CONTATTARE = "da-contattare";
 export const STAGE_IN_ATTESA = "in-attesa";
