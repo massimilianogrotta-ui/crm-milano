@@ -1,5 +1,5 @@
 import type { OutreachKind } from "@/lib/outreach/templates";
-import { OUTREACH_MAX_GIORNO } from "@/lib/outreach/config";
+import { tettoInvii } from "@/lib/outreach/config";
 
 export interface PropostaDaEseguire {
   id: string;
@@ -67,7 +67,7 @@ export async function eseguiDecisione(
     return ok ? { status: "rejected" } : { status: "non_pending" };
   }
 
-  if (!deps.dryRun && await deps.contaInviiVeri() >= OUTREACH_MAX_GIORNO) return { status: "limite_giorno" };
+  if (!deps.dryRun && await deps.contaInviiVeri() >= tettoInvii()) return { status: "limite_giorno" };
 
   // Blocca la proposta prima di inviare: due clic non producono due email.
   const preso = await deps.salva({ expectStatus: "pending", status: "approved", decided_by: d.userId, decided_at: ora, dry_run: deps.dryRun });

@@ -269,6 +269,16 @@ const schema = z.object({
   OUTREACH_REPLY_TO: z.union([z.literal(""), z.email()]).optional().default(""),
   OUTREACH_WA_FOLLOWUP: z.string().optional().default(""),
   OUTREACH_WA_FOLLOWUP_GIORNI: z.coerce.number().int().positive().optional().default(10),
+  /**
+   * Teto de envios REAIS de outreach por dia. Vazio, ausente ou não-inteiro
+   * vale 5: este schema NÃO lança — um throw aqui é 500 em toda página.
+   * O intervalo [1, 30] mora em `tettoInvii()`: "500" fica 500 aqui e vira 30
+   * na hora do envio. "0" e negativo passam inteiros e o clamp os leva a 1.
+   */
+  OUTREACH_TETTO_INVII: z.preprocess(
+    (val) => (val === undefined || val === null || val === "" ? undefined : val),
+    z.coerce.number().int().default(5).catch(5),
+  ),
 
   /**
    * E-mail de suporte que a instalação mostra ao CLIENTE FINAL (tela de conta

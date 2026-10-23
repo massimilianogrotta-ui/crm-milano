@@ -20,6 +20,16 @@ export function outreachOrgId(): string | null {
 
 export const OUTREACH_PIPELINE_SLUG = "milano-prospect";
 export const OUTREACH_MAX_GIORNO = 10;
+
+/**
+ * Invii reali al giorno. Il default 5 e il rifiuto di "abc" stanno nello schema
+ * (`OUTREACH_TETTO_INVII`): qui si applica solo l'intervallo [1, 30]. 30 è un
+ * tetto rigido in codice — un valore più alto non passa.
+ */
+export function tettoInvii(raw: number = env.OUTREACH_TETTO_INVII): number {
+  if (!Number.isInteger(raw)) return 5;
+  return Math.min(30, Math.max(1, raw));
+}
 export const OUTREACH_WA_FOLLOWUP_GIORNI = env.OUTREACH_WA_FOLLOWUP_GIORNI;
 export const outreachWaFollowup = () => env.OUTREACH_WA_FOLLOWUP === "true";
 export function mittenteOutreach(fromEmail = env.OUTREACH_FROM_EMAIL, replyTo = env.OUTREACH_REPLY_TO) {

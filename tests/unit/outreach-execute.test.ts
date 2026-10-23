@@ -49,6 +49,17 @@ describe("eseguiDecisione", () => {
     expect(d.send).not.toHaveBeenCalled();
     expect(d.salva).not.toHaveBeenCalled();
   });
+  it("con 5 invii veri già fatti il tetto reale ferma l'invio", async () => {
+    const d = deps({ contaInviiVeri: vi.fn(async () => 5) });
+    expect(await eseguiDecisione(P, { azione: "approva", userId: "u1" }, d)).toMatchObject({ status: "limite_giorno" });
+    expect(d.send).not.toHaveBeenCalled();
+    expect(d.salva).not.toHaveBeenCalled();
+  });
+  it("in prova il tetto reale non si applica", async () => {
+    const d = deps({ dryRun: true, contaInviiVeri: vi.fn(async () => 5) });
+    expect(await eseguiDecisione(P, { azione: "approva", userId: "u1" }, d)).toMatchObject({ status: "sent" });
+    expect(d.send).not.toHaveBeenCalled();
+  });
   it("invio fallito: failed, niente spostamento", async () => {
     const d = deps({ send: vi.fn(async () => ({ ok: false, error: "send_failed" as const })) });
     const r = await eseguiDecisione(P, { azione: "approva", userId: "u1" }, d);

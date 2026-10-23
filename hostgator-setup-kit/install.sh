@@ -1627,6 +1627,9 @@ esac
   printf '# e-mail real sai. ORG_ID vazio = worker desligado.\n'
   envq OUTREACH_DRY_RUN "${OUTREACH_DRY_RUN:-}"
   envq OUTREACH_ORG_ID "${OUTREACH_ORG_ID:-}"
+  printf '# Teto de envios REAIS de outreach por dia. Vazio = 5, e o código\n'
+  printf '# nunca passa de 30. As propostas em prova continuam em 10.\n'
+  envq OUTREACH_TETTO_INVII "${OUTREACH_TETTO_INVII:-}"
   printf '# Qual provedor você escolheu na instalação. É o que faz a 2ª execução do\n'
   printf '# install.sh já vir com a sua escolha como padrão, em vez de re-adivinhar\n'
   printf '# pelas chaves presentes. A app não lê esta variável.\n'
