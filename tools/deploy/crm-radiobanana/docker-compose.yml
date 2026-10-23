@@ -18,6 +18,13 @@ services:
     pull_policy: never
     restart: unless-stopped
     env_file: .env
+    environment:
+      # Stesso valore di WHATSAPP_HOOK_HMAC_KEY sul waha. Manca → il compose
+      # non parte: non c'è un default da scrivere nel file.
+      WAHA_HMAC_SECRET: ${WAHA_HMAC_SECRET:?set WAHA_HMAC_SECRET in .env}
+      # Resta false finché un evento reale non risulta firmato. Solo allora
+      # true, e si ricrea solo app. Vedi README.md.
+      WAHA_WEBHOOK_REQUIRE_SIGNATURE: ${WAHA_WEBHOOK_REQUIRE_SIGNATURE:-false}
     depends_on:
       srh: { condition: service_started }
       waha: { condition: service_started }
@@ -54,6 +61,9 @@ services:
       # indirizzo pubblico qui fermerebbe l'ingresso dei messaggi.
       WHATSAPP_HOOK_URL: http://app:3000/api/v1/webhooks/waha
       WHATSAPP_HOOK_EVENTS: 'message,session.status'
+      # Nome della doc WAHA (events#hmac-authentication): senza _KEY non firma.
+      # Stesso segreto che l'app legge come WAHA_HMAC_SECRET.
+      WHATSAPP_HOOK_HMAC_KEY: ${WAHA_HMAC_SECRET:?set WAHA_HMAC_SECRET in .env}
       WAHA_WORKER_REDIS_URL: redis://srh:8080
       WAHA_MEDIA_STORAGE: LOCAL
       # Vedi commento gemello in tools/deploy/crm-allio/docker-compose.yml:
