@@ -100,3 +100,27 @@ curl -sS -D - \
 ```
 
 Atteso: HTTP 401 e `"message":"signature_required"`.
+
+## Canal oficial (Cloud API)
+
+O WhatsApp por QR (WAHA) continua no compose. O canal oficial entra ao lado, quando a organização conectar um número. Esta seção só nomeia variáveis. Não há número, identificador de telefone, WABA nem token aqui — isso fica na sessão do canal ou no `.env` da VPS, e ligar o número precisa do `/def-ok` de quem administra.
+
+A firma HMAC dos webhooks WAHA, acima, continua obrigatória: segredo vazio não sobe este compose.
+
+## Variáveis do canal oficial
+
+Nomes, sem valor:
+
+- `META_APP_SECRET` — assinatura HMAC-SHA256 do webhook (`x-hub-signature-256`).
+- `META_WEBHOOK_VERIFY_TOKEN` — o handshake GET. A Meta compara com o que está no app.
+- `META_GRAPH_VERSION` — versão da Graph. O código assume `v22.0` se estiver vazio.
+- `META_PHONE_NUMBER_ID` e `META_SYSTEM_USER_TOKEN` — fallback de instalação com um número só. Com credencial gravada na sessão (`channel_sessions`), o env deixa de valer para aquele envio.
+
+O número em si não é variável deste arquivo. Ele entra depois, na sessão do canal da organização, ou nesses dois nomes de fallback. Esse passo não faz parte de subir o compose.
+
+## País do telefone e marketing
+
+Em `organizations.settings`, sem migração:
+
+- `phone_default_country`: `BR` (padrão, ausência inclusive) ou `EC`. Com `EC`, um celular local `099…` vira E.164 do Equador. Com `BR`, a regra antiga não muda.
+- `require_marketing_consent`: só `true` barra modelo de categoria MARKETING para contato sem `contacts.consent.marketing.granted_at`. UTILITY segue. O padrão é não exigir.

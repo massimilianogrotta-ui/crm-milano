@@ -120,8 +120,9 @@ describe("MessageBubble — rótulo de origem", () => {
     expect(screen.queryByText("Celular")).not.toBeInTheDocument();
   });
 
-  it("system não inventa rótulo", () => {
+  it("system nomeia Sistema e não se passa por pessoa nem por IA", () => {
     render(<MessageBubble message={msg({ sent_via: "system" })} />);
+    expect(screen.getByText("Sistema")).toBeInTheDocument();
     for (const rotulo of ["Celular", "Automação", "Você", "Atendente", "IA"]) {
       expect(screen.queryByText(rotulo)).not.toBeInTheDocument();
     }
