@@ -27,11 +27,12 @@ import { NextResponse, type NextRequest } from "next/server";
 import { env } from "@/lib/env";
 import { alvoDe, classificarFalhaDeAlcance, type FalhaDeAlcance } from "@/lib/net/alcance";
 import { validarConfigRedisRest } from "@/lib/redis-config";
+import { wahaHabilitado } from "@/lib/waha/habilitado";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-type CheckStatus = "ok" | "degraded" | "down";
+type CheckStatus = "ok" | "degraded" | "down" | "disabled";
 
 /** Por que o check não passou. `credencial_recusada` é o 401/403 — chegamos lá, e fomos barrados. */
 type MotivoDeFalha =
@@ -169,6 +170,13 @@ async function checkRedis(): Promise<Check> {
 }
 
 async function checkWaha(): Promise<Check> {
+  // Desligado de propósito não é falha e não é degradação: a instalação não
+  // usa este transporte (o canal é outro). Não consultar evita o timeout de
+  // 3s e o 503 que ele produzia com o contêiner parado.
+  // A leitura é a string crua, no momento do pedido — não o default do Zod.
+  if (!wahaHabilitado()) {
+    return { status: "disabled", latency_ms: 0 };
+  }
   const t0 = Date.now();
   const base = env.WAHA_API_BASE_URL;
   if (!base) {
@@ -272,6 +280,8 @@ export async function GET(req: NextRequest) {
   const filtrar = verboso ? (c: Check) => c : semAlvo;
   const checks = { supabase: filtrar(supabase), redis: filtrar(redis), waha: filtrar(waha) };
 
+  // `disabled` fica de fora dos dois: transporte desligado de propósito não
+  // torna o processo unhealthy nem degraded.
   const anyDown = Object.values(checks).some((c) => c.status === "down");
   const anyDegraded = Object.values(checks).some((c) => c.status === "degraded");
   const status: "healthy" | "degraded" | "unhealthy" = anyDown

@@ -52,7 +52,7 @@ import {
   type ChannelProvider,
   type ChannelSessionRef,
 } from "@/lib/channels";
-import { sincronizarSaudeDaConexao } from "@/lib/channels/health";
+import { DETALHE_TRANSPORTE_DESLIGADO, sincronizarSaudeDaConexao } from "@/lib/channels/health";
 import { logger } from "@/lib/logger";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { autorizaCron } from "@/lib/auth/cron-auth";
@@ -136,6 +136,13 @@ async function handle(req: NextRequest): Promise<Response> {
         organizationId: s.organization_id,
         sessionRef,
       });
+      // Transporte desligado de propósito: não é falha da sessão e não gera
+      // aviso nem warn. Seguir adiante chamaria `sincronizar`, e um detalhe
+      // sem aviso fecharia episódio aberto de outro problema.
+      if (saude.detail === DETALHE_TRANSPORTE_DESLIGADO) {
+        ignoradas++;
+        continue;
+      }
       verificadas++;
 
       // O status novo vale para o banco, mas SÓ quando deu para perguntar:

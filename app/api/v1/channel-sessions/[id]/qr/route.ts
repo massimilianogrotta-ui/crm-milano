@@ -24,6 +24,7 @@ import { requireSupportWrite } from "@/lib/impersonate/support";
 import { NextResponse } from "next/server";
 
 import { loadAuthUser, resolveActiveOrg } from "@/lib/auth/server";
+import { wahaHabilitado } from "@/lib/waha/habilitado";
 import { ARCHIVED_AT, queryTolerantToMissingArchived } from "@/lib/channels/archived";
 import { createClient } from "@/lib/supabase/server";
 
@@ -79,6 +80,10 @@ export async function GET(
       status: 409,
       headers: { "x-channel-state": "no-session" },
     });
+  }
+
+  if (!wahaHabilitado()) {
+    return new NextResponse(null, { status: 503, headers: { "x-channel-state": "disabled" } });
   }
 
   const baseUrl = process.env.WAHA_API_BASE_URL;

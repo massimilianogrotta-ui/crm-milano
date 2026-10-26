@@ -74,6 +74,10 @@ const envSchema = z.object({
   // WAHA direto (admin-plane, regra dura nº 4): reconcilia o espelho
   // channel_sessions com o status real e reenvia mensagens AI presas em queued.
   // Opcionais no boot: sem WAHA_API_BASE_URL/KEY o watchdog fica OFF (warn).
+  // Só o literal "false" desliga. Sem default e sem coerce: string vazia já
+  // foi filtrada acima do parse, e "false" tem de chegar intacto — coerce
+  // boolean transformaria essa string em true.
+  WAHA_ENABLED: z.string().optional(),
   WAHA_API_BASE_URL: z.string().url().optional(),
   WAHA_API_KEY: z.string().min(1).optional(),
   WATCHDOG_INTERVAL_MS: z.coerce.number().int().positive().default(60_000),

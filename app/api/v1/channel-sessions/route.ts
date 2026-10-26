@@ -21,6 +21,7 @@ import { PROVIDERS_DE_MENSAGEM } from "@/lib/channels/capabilities";
 import { createChannelSchema } from "@/lib/schemas/channels";
 import { createClient } from "@/lib/supabase/server";
 import { getWahaClient } from "@/lib/waha/client";
+import { MENSAGEM_WAHA_DESLIGADO, wahaHabilitado } from "@/lib/waha/habilitado";
 import { traduzir } from "@/lib/i18n/dicionario";
 
 export const dynamic = "force-dynamic";
@@ -80,6 +81,10 @@ export async function POST(req: NextRequest): Promise<Response> {
   const t = (texto: string) => traduzir(texto, authz.user.idioma);
   const { user, org: activeOrg } = authz;
   if (await mfaEmDivida()) return fail("mfa_required", t("Confirme a verificação em duas etapas."), 403, { requestId });
+
+  if (!wahaHabilitado()) {
+    return fail("waha_disabled", t(MENSAGEM_WAHA_DESLIGADO), 503, { requestId });
+  }
 
   const waha = getWahaClient();
   if (!waha) {

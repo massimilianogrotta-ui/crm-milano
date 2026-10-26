@@ -86,7 +86,7 @@ Owner/Admin. Não dá para hospedar vários clientes numa conta só.
 | Domínio | Registro de domínio (aponte um A-record pro IP do VPS) |
 | Banco de dados | Conta grátis no [supabase.com](https://supabase.com) (3 chaves + connection string) |
 | IA | Chave da [Anthropic](https://console.anthropic.com) |
-| WhatsApp | Seu número — conectado por QR code no onboarding |
+| WhatsApp | Seu número — conectado por QR code no onboarding. Instalação que não usa o WAHA (o WhatsApp entra só pela API oficial) define `WAHA_ENABLED=false` no `.env`: o padrão é ligado, e só esse valor exato desliga. Com ele desligado, a verificação de saúde não cobra o serviço e continua dizendo que o sistema está no ar |
 | Token do Supabase (opcional) | [supabase.com/dashboard/account/tokens](https://supabase.com/dashboard/account/tokens) — com ele o instalador configura sozinho os links dos e-mails de acesso. **Ele não fica salvo:** é usado uma vez e some com o processo |
 
 > **Sem esse token, um passo fica manual — e ele importa.** Os e-mails de

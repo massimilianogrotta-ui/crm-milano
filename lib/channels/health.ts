@@ -65,6 +65,16 @@ export const REF_KIND_SESSAO = "channel_session";
 export const DETALHE_CREDENCIAL_RECUSADA = "credencial_recusada_pelo_transporte";
 
 /**
+ * O transporte foi desligado de propósito (`WAHA_ENABLED=false`).
+ *
+ * Não é "não deu para perguntar" — não há o que perguntar. Quem observa tem
+ * de pular a sessão: tratar como inalcançável abriria um aviso permanente na
+ * Central, e tratar como saudável fecharia um aviso que ainda vale para outro
+ * canal.
+ */
+export const DETALHE_TRANSPORTE_DESLIGADO = "transporte_desligado";
+
+/**
  * Marca do episódio aberto por um EMPURRÃO do provedor.
  *
  * A varredura não fecha episódio com esta marca: ela mede credencial e conta,
@@ -96,6 +106,10 @@ export interface SaudeObservada {
  * pergunta de quem lê o aviso é exatamente essa.
  */
 export function avisoDaConexao(saude: SaudeObservada, apelido: string): AvisoDeConexao | null {
+  // Desligado de propósito não é episódio. `null` aqui NÃO autoriza fechar
+  // aviso antigo: quem chama (o cron) tem de nem chegar em `sincronizar` —
+  // senão um `null` com episódio aberto resolveria o aviso de outro problema.
+  if (saude.detail === DETALHE_TRANSPORTE_DESLIGADO) return null;
   if (!saude.reachable) {
     // "Não deu para perguntar" tem DOIS motivos que pedem ações opostas, e
     // tratá-los igual foi o defeito medido: numa VPS real a chave do WAHA foi

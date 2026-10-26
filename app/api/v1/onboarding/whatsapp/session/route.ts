@@ -6,6 +6,7 @@ import { requireSupportWrite } from "@/lib/impersonate/support";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getWahaClient } from "@/lib/waha/client";
+import { MENSAGEM_WAHA_DESLIGADO, wahaHabilitado } from "@/lib/waha/habilitado";
 import { connectWahaChannel, ChannelConnectionError } from "@/lib/channels/connect-waha";
 import { loadOnboardingChannel } from "@/lib/channels/onboarding-session";
 
@@ -14,6 +15,7 @@ export async function GET(): Promise<Response> {
   const user = await loadAuthUser(); if (!user) return fail("unauthenticated", "Sessão expirada", 401, { requestId });
   const org = await resolveActiveOrg(user); if (!org) return fail("tenant_not_found", "Sem organização ativa", 404, { requestId });
   if (await mfaEmDivida()) return fail("mfa_required", "Confirme a verificação em duas etapas.", 403, { requestId });
+  if (!wahaHabilitado()) return fail("waha_disabled", MENSAGEM_WAHA_DESLIGADO, 503, { requestId });
   const waha = getWahaClient(); if (!waha) return ok({ status: "WAHA_NOT_CONFIGURED", session: null }, { requestId });
   try {
     const db = await createClient(); const channel = await loadOnboardingChannel(db, org.orgId);
@@ -33,6 +35,7 @@ export async function POST(req: Request): Promise<Response> {
   const auth = await requireRole("admin", { requestId, resource: "channel_sessions", allowPlatformAdmin: true });
   if (!auth.ok) return auth.response;
   if (await mfaEmDivida()) return fail("mfa_required", "Confirme a verificação em duas etapas.", 403, { requestId });
+  if (!wahaHabilitado()) return fail("waha_disabled", MENSAGEM_WAHA_DESLIGADO, 503, { requestId });
   const waha = getWahaClient(); if (!waha) return fail("waha_not_configured", "O serviço de conexão está indisponível. Tente novamente.", 503, { requestId });
   try {
     const result = await connectWahaChannel(await createClient(), createAdminClient(), waha, {

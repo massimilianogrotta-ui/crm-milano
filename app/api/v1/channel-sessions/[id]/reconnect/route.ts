@@ -44,6 +44,7 @@ import { requireRole } from "@/lib/auth/require-role";
 import { ARCHIVED_AT, queryTolerantToMissingArchived } from "@/lib/channels/archived";
 import { createClient } from "@/lib/supabase/server";
 import { getWahaClient, wahaFriendlyError } from "@/lib/waha/client";
+import { MENSAGEM_WAHA_DESLIGADO, wahaHabilitado } from "@/lib/waha/habilitado";
 import { traduzir } from "@/lib/i18n/dicionario";
 
 export const dynamic = "force-dynamic";
@@ -121,6 +122,10 @@ export async function POST(
       422,
       { requestId },
     );
+  }
+
+  if (!wahaHabilitado()) {
+    return fail("waha_disabled", t(MENSAGEM_WAHA_DESLIGADO), 503, { requestId });
   }
 
   const waha = getWahaClient();

@@ -10,6 +10,7 @@ import { describeWahaServer, type WahaServerCapabilities } from "@/lib/channels/
 
 import { logger } from "@/lib/logger";
 import { classificarFalhaDeAlcance, explicarFalhaDeAlcance } from "@/lib/net/alcance";
+import { recusarSeWahaDesligado, WahaDesligadoError } from "@/lib/waha/habilitado";
 
 /**
  * AS CONVERSAS QUE O CRM NÃO ATENDE, E POR ISSO NÃO PRECISA RECEBER.
@@ -186,6 +187,8 @@ export class WahaClient {
     init: RequestInit,
     tetoMs?: number,
   ): Promise<Response> {
+    // Antes do teto e antes do fetch: desligado não espera timeout de rede.
+    recusarSeWahaDesligado();
     const teto = tetoMs ?? this.tetoMs;
     try {
       return await fetch(url, { ...init, signal: AbortSignal.timeout(teto) });
@@ -640,6 +643,7 @@ export class WahaClient {
  * verdade disponível.
  */
 export function wahaFriendlyError(erro: unknown): string {
+  if (erro instanceof WahaDesligadoError) return erro.message;
   const falha = classificarFalhaDeAlcance(erro);
   if (falha !== "indeterminada") {
     return explicarFalhaDeAlcance(falha, "o WhatsApp (WAHA)");
