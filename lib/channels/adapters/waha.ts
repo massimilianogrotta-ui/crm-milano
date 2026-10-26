@@ -16,7 +16,8 @@ import {
 import { bareWaMessageId, parseWahaMessageId } from "@/lib/waha/message-id";
 import { resolveWahaChatId } from "@/lib/waha/send";
 import type { FetchedMedia } from "@/lib/messaging/media/types";
-import { DETALHE_CREDENCIAL_RECUSADA } from "../health";
+import { DETALHE_CREDENCIAL_RECUSADA, DETALHE_TRANSPORTE_DESLIGADO } from "../health";
+import { recusarSeWahaDesligado, wahaHabilitado } from "@/lib/waha/habilitado";
 import type { ChannelAdapter, ChannelHealth, OutboundEnvelope, RecipientInput } from "../types";
 
 /**
@@ -133,6 +134,9 @@ export const wahaAdapter: ChannelAdapter = {
    *     aprenderia a ignorar o aviso.
    */
   async checkHealth(input: { sessionRef: string }): Promise<ChannelHealth> {
+    if (!wahaHabilitado()) {
+      return { reachable: false, status: null, detail: DETALHE_TRANSPORTE_DESLIGADO };
+    }
     const client = getWahaClient();
     if (!client) return { reachable: false, status: null, detail: "transporte_nao_configurado" };
     try {
@@ -185,6 +189,9 @@ export const wahaAdapter: ChannelAdapter = {
   },
 
   async send(envelope: OutboundEnvelope): Promise<{ externalId: string | null }> {
+    // Desligado é erro, não o NOOP de "container ausente". O NOOP abaixo marca
+    // a mensagem como enviada sem id; aqui a instalação pediu para recusar.
+    recusarSeWahaDesligado();
     const client = getWahaClient();
     // Sem env de WAHA o comportamento atual é NOOP, não erro: a UI mostra o
     // banner de "container não está no ar". Transformar em exceção mudaria o

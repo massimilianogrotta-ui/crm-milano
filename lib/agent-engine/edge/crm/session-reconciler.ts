@@ -24,6 +24,7 @@
 import type pg from 'pg';
 
 import { parseWahaMessageId } from '@/lib/waha/message-id';
+import { wahaHabilitado } from '@/lib/waha/habilitado';
 import { lerNumerosDeTeste, numeroPodeTestar, preGoLiveAtivo } from '@/lib/ai/elegibilidade/pre-go-live';
 
 import type { Logger } from '../../obs/logger';
@@ -93,6 +94,9 @@ export async function reconcileSessions(
   cfg: WatchdogConfig,
   log: Logger,
 ): Promise<number> {
+  // Desligado não é "WAHA fora": não há o que reconciliar e um warn por tick
+  // ensinaria o operador a ignorar o log. Sem fetch.
+  if (!wahaHabilitado()) return 0;
   const sessions = await fetchWahaSessions(cfg);
   if (sessions === null) {
     log.warn('watchdog: WAHA indisponível — tick de reconciliação pulado', {});
@@ -186,6 +190,11 @@ export async function redriveQueued(
   cfg: WatchdogConfig,
   log: Logger,
 ): Promise<number> {
+  // O redrive fala com o endpoint de envio de texto. Com o transporte desligado
+  // a mensagem fica queued — reenviá-la não tem para onde ir, e o fetch só
+  // geraria warn. O literal do caminho fica uma vez só neste arquivo: um teste
+  // conta as ocorrências para impedir um segundo envio.
+  if (!wahaHabilitado()) return 0;
   const { rows } = await pool.query<QueuedRow>(
     `select m.id, m.organization_id, m.body, s.waha_session_name,
             c.wa_identity, c.wa_lid, c.phone_number, v.is_group, v.group_chat_id
@@ -310,6 +319,10 @@ export async function runSessionWatchdogLoop(
   log: Logger,
   signal: AbortSignal,
 ): Promise<void> {
+  // Sai antes do laço: nenhum tick, nenhum warn de "WAHA indisponível".
+  // O processo (worker e o contêiner que reusa esta imagem) não pergunta
+  // /api/sessions enquanto WAHA_ENABLED for exatamente "false".
+  if (!wahaHabilitado()) return;
   while (!signal.aborted) {
     try {
       const fixed = await reconcileSessions(pool, cfg, log);

@@ -14,6 +14,7 @@ import {
   MediaTooLargeError,
   type FetchedMedia,
 } from "@/lib/messaging/media/types";
+import { recusarSeWahaDesligado } from "@/lib/waha/habilitado";
 
 const FETCH_TIMEOUT_MS = 30_000;
 
@@ -21,6 +22,7 @@ export async function fetchWahaMedia(
   mediaUrl: string,
   hintMime?: string | null,
 ): Promise<FetchedMedia> {
+  recusarSeWahaDesligado();
   const base = process.env.WAHA_API_BASE_URL;
   let url: URL;
   try {

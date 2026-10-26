@@ -1632,6 +1632,27 @@ STUB
   fi
   printf '  ✓ o WAHA sai pinado no .env (%s), não em :latest\n' "$img_waha"
 
+  # Instalação nova não pergunta: o transporte nasce ligado. Ausente e "false"
+  # são os dois jeitos de o health check mentir sobre uma VPS que usa WAHA.
+  waha_on="$(valor_no_env "$VPS_PROJ/.env" WAHA_ENABLED)"
+  if [ "$waha_on" != "true" ]; then
+    printf '  ✗ instalação nova não gravou WAHA_ENABLED=true: [%s]\n' "${waha_on:-(ausente)}"; exit 1
+  fi
+  printf '  ✓ instalação nova grava WAHA_ENABLED=true sem perguntar\n'
+
+  # Reexecução: um false posto à mão tem de sobreviver. O .env é reescrito por
+  # truncamento; sem `${WAHA_ENABLED:-true}` a linha voltaria a true e a
+  # instalação que desligou o transporte passaria a cobrá-lo de novo.
+  # O 3º argumento do `rodar` é o que o .env TEM antes do install — o `rodar`
+  # reescreve o arquivo, então editar o .env da rodada anterior não chega lá.
+  saida="$(rodar install.sh --yes 'WAHA_ENABLED="false"')"
+  chegou_na_deteccao || exit 1
+  waha_off="$(valor_no_env "$VPS_PROJ/.env" WAHA_ENABLED)"
+  if [ "$waha_off" != "false" ]; then
+    printf '  ✗ reexecução sobrescreveu WAHA_ENABLED=false: [%s]\n' "${waha_off:-(ausente)}"; exit 1
+  fi
+  printf '  ✓ reexecução preserva WAHA_ENABLED=false\n'
+
   # ── A cor da marca sai da ENTREVISTA e chega ao .env ───────────────────────
   # Este é o caso que prova o defeito que o épico da marca deixou aberto: o
   # revendedor punha o nome dele e recebia o VERDE DO PRODUTO em todo e-mail de

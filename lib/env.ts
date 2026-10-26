@@ -137,6 +137,14 @@ const schema = z.object({
   SUPABASE_DB_ADMIN_URL: z.string().optional().default(""),
 
   // WAHA
+  /**
+   * Só o literal `false` desliga o WAHA. Ausente = ligado, e qualquer outro
+   * valor também (`0`, `no`, `FALSE`): um typo não apaga o canal de quem
+   * ainda usa WAHA. Quem decide é `wahaHabilitado()` em `lib/waha/habilitado.ts`,
+   * na string crua — não `z.coerce.boolean()`, que trataria `"false"` como
+   * verdadeiro.
+   */
+  WAHA_ENABLED: z.string().optional().default("true"),
   WAHA_API_BASE_URL: required("WAHA_API_BASE_URL"),
   WAHA_API_KEY: required("WAHA_API_KEY"),
   WAHA_WEBHOOK_BASE_URL: required("WAHA_WEBHOOK_BASE_URL"),

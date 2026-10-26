@@ -2,6 +2,7 @@ import { loadOnboardingChannel } from "@/lib/channels/onboarding-session";
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 import { loadAuthUser, resolveActiveOrg } from "@/lib/auth/server";
+import { wahaHabilitado } from "@/lib/waha/habilitado";
 
 /**
  * Proxy WAHA's QR endpoint so the browser can <img src="..." /> without
@@ -14,6 +15,10 @@ export async function GET() {
   if (!user) return new NextResponse(null, { status: 401 });
   const activeOrg = await resolveActiveOrg(user);
   if (!activeOrg) return new NextResponse(null, { status: 404 });
+
+  if (!wahaHabilitado()) {
+    return new NextResponse(null, { status: 503, headers: { "x-channel-state": "disabled" } });
+  }
 
   const baseUrl = process.env.WAHA_API_BASE_URL;
   const apiKey = process.env.WAHA_API_KEY;

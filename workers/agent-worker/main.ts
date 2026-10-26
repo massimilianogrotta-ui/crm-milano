@@ -95,6 +95,7 @@ import { runHealthLoop } from "@/lib/agent-engine/health/circuit";
 import { runFlywheelLoop } from "@/lib/agent-engine/flywheel/live";
 import { llmEdgeConfigFromEnv } from "@/lib/agent-engine/edge/llm/run-model-call";
 import { loadEnv, type Env } from "@/lib/agent-engine/env";
+import { wahaHabilitado } from "@/lib/waha/habilitado";
 import { createLogger, type Logger } from "@/lib/agent-engine/obs/logger";
 import {
   evaluateCacheHitAlert,
@@ -328,8 +329,15 @@ export async function startWorker(
 
   // Watchdog de sessão (4A-2): reconcilia channel_sessions×WAHA + redrive de
   // queued. Liga só com as credenciais do WAHA no env (sem elas: warn + off).
-  const sessionWatchdogLoop =
-    env.WAHA_API_BASE_URL !== undefined && env.WAHA_API_KEY !== undefined
+  // WAHA_ENABLED=false desliga mesmo com URL e chave presentes: a instalação
+  // que não usa este transporte não pode ficar perguntando /api/sessions.
+  // As duas leituras: o objeto parseado (o schema pode omitir a chave) e
+  // process.env (o que o operador escreveu). Uma das duas em "false" basta
+  // para NÃO ligar — omissão no schema não religa o polling.
+  const wahaDesligado = !wahaHabilitado(env) || !wahaHabilitado();
+  const sessionWatchdogLoop = wahaDesligado
+    ? (log.info("watchdog de sessão OFF — WAHA_ENABLED=false", {}), Promise.resolve())
+    : env.WAHA_API_BASE_URL !== undefined && env.WAHA_API_KEY !== undefined
       ? runSessionWatchdogLoop(
           pool,
           {

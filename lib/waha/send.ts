@@ -7,6 +7,7 @@
  * WAHA env is not configured — callers must treat that as a noop, not error.
  */
 import { getWahaClient } from "./client";
+import { recusarSeWahaDesligado } from "./habilitado";
 
 export interface SendWahaInput {
   sessionName: string;
@@ -62,6 +63,7 @@ export function resolveWahaChatId(input: ResolveWahaChatIdInput): string | null 
 }
 
 export async function sendWAHA(input: SendWahaInput): Promise<unknown | null> {
+  recusarSeWahaDesligado();
   const client = getWahaClient();
   if (!client) return null;
   return client.sendMessage(input.sessionName, input.chatId, input.text);

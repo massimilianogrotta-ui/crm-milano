@@ -32,6 +32,7 @@ import { isChannelStatus } from "@/lib/schemas/channels";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { getWahaClient, wahaFriendlyError } from "@/lib/waha/client";
+import { MENSAGEM_WAHA_DESLIGADO, wahaHabilitado } from "@/lib/waha/habilitado";
 import { traduzir } from "@/lib/i18n/dicionario";
 
 export const dynamic = "force-dynamic";
@@ -175,7 +176,8 @@ export async function GET(
     impact ? { ...corpo, deletion_impact: impact } : corpo;
 
   if (user.support?.access_mode === "support_readonly") return ok(comImpacto({ ...session, waha_configured: false }), { requestId });
-  const waha = getWahaClient();
+  // Desligado: devolve o espelho do banco, sem perguntar /api/sessions.
+  const waha = wahaHabilitado() ? getWahaClient() : null;
   // Canal oficial não tem sessão no transporte para consultar — `waha_session_name`
   // é NULL nele por CHECK, e perguntar assim mesmo pediria `/api/sessions/null`.
   const nomeSessao =
@@ -334,6 +336,9 @@ export async function DELETE(
   };
 
   if (session.provider === CHANNEL_PROVIDER_WAHA) {
+    if (!wahaHabilitado()) {
+      return fail("waha_disabled", t(MENSAGEM_WAHA_DESLIGADO), 503, { requestId });
+    }
     const waha = getWahaClient();
     if (!waha) {
       return fail(

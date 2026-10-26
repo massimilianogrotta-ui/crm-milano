@@ -45,12 +45,16 @@ vi.mock("@/lib/env", () => ({
 vi.mock("@/lib/waha/client", () => ({ getWahaClient: () => null }));
 
 const sincronizou = vi.fn();
-vi.mock("@/lib/channels/health", () => ({
-  sincronizarSaudeDaConexao: (...args: unknown[]) => {
-    sincronizou(...args);
-    return Promise.resolve("sem_mudanca");
-  },
-}));
+vi.mock("@/lib/channels/health", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/channels/health")>();
+  return {
+    ...actual,
+    sincronizarSaudeDaConexao: (...args: unknown[]) => {
+      sincronizou(...args);
+      return Promise.resolve("sem_mudanca");
+    },
+  };
+});
 
 const avisos = vi.fn();
 vi.mock("@/lib/logger", () => ({
