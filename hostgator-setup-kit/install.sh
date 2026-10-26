@@ -1667,6 +1667,11 @@ esac
   envq WAHA_BYO_ENCRYPTION_KEY "$WAHA_BYO_ENCRYPTION_KEY"
   envq IMPERSONATE_COOKIE_SECRET "$IMPERSONATE_COOKIE_SECRET"
   envq LGPD_SIGNING_KEY "$LGPD_SIGNING_KEY"
+  # true por padrão, e SEM pergunta: quem usa o WAHA não tem que saber que a
+  # chave existe. `${WAHA_ENABLED:-true}` grava true só quando a chave falta —
+  # o load_env já carregou o .env atual, então um `false` posto à mão sobrevive
+  # à próxima execução. Vazio cai no true, que é o mesmo efeito de não desligar.
+  envq WAHA_ENABLED "${WAHA_ENABLED:-true}"
   envq WAHA_API_BASE_URL "http://waha:3000"
   envq WAHA_WEBHOOK_BASE_URL "http://app:3000"
   envq WAHA_API_KEY "$WAHA_API_KEY"
