@@ -123,6 +123,11 @@ export const ApiErrorCodes = {
   wacalls_error: "wacalls_error", // 502: o serviço de chamada de voz recusou ou não respondeu
   ai_provider_error: "ai_provider_error",
   nuvemshop_error: "nuvemshop_error",
+
+  // Canal oficial: texto livre com a janela de 24h fechada, e modelo de
+  // marketing para contato que não concedeu quando a organização exige.
+  fuera_de_ventana: "fuera_de_ventana",
+  marketing_consent_required: "marketing_consent_required",
 } as const;
 
 export type ApiErrorCode = (typeof ApiErrorCodes)[keyof typeof ApiErrorCodes];
