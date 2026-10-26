@@ -3,22 +3,37 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { logger } from "@/lib/logger";
 import { isOutreachDryRun, OUTREACH_MAX_GIORNO, OUTREACH_PIPELINE_SLUG, STAGE_DA_CONTATTARE, STAGE_IN_ATTESA } from "@/lib/outreach/config";
 import { giornataRoma } from "@/lib/outreach/day";
+import { contatoriVuoti, type ContatoriEsclusione } from "@/lib/outreach/esclusioni";
 import { scegliProposte, type Candidato, type StoricoProposta } from "@/lib/outreach/select";
 
 export interface EsitoGenerazione {
   stato: "ok" | "pipeline_assente" | "errore";
   candidati: number;
   create: number;
+  /** Conteggi per categoria. Nessuna email e nessun nome: solo numeri. */
+  esclusi: ContatoriEsclusione;
   errore?: string;
 }
 
 const BLOCCO_STORICO = 100;
 
+type RigaStorico = {
+  id: string;
+  lead_id: string;
+  contact_id: string | null;
+  to_address: string | null;
+  kind: StoricoProposta["kind"];
+  status: StoricoProposta["status"];
+  created_at: string;
+  sent_at: string | null;
+  dry_run: boolean;
+};
+
 /** Usa l'admin client: OGNI query filtra organization_id a mano (regola di lib/supabase/admin.ts). */
 export async function generaProposte(admin: SupabaseClient, orgId: string, ora = new Date()): Promise<EsitoGenerazione> {
   function errore(fase: string, message: string, candidati = 0, create = 0): EsitoGenerazione {
     logger.warn("[outreach] giro in errore", { organization_id: orgId, fase, error: message });
-    return { stato: "errore", candidati, create, errore: message };
+    return { stato: "errore", candidati, create, esclusi: contatoriVuoti(), errore: message };
   }
 
   const { data: pipeline, error: ePipe } = await admin
@@ -28,7 +43,7 @@ export async function generaProposte(admin: SupabaseClient, orgId: string, ora =
     .eq("slug", OUTREACH_PIPELINE_SLUG)
     .maybeSingle();
   if (ePipe) return errore("pipeline", ePipe.message);
-  if (!pipeline) return { stato: "pipeline_assente", candidati: 0, create: 0 };
+  if (!pipeline) return { stato: "pipeline_assente", candidati: 0, create: 0, esclusi: contatoriVuoti() };
 
   const { data: stages, error: eStages } = await admin
     .from("crm_stages")
@@ -38,7 +53,7 @@ export async function generaProposte(admin: SupabaseClient, orgId: string, ora =
     .in("slug", [STAGE_DA_CONTATTARE, STAGE_IN_ATTESA]);
   if (eStages) return errore("stages", eStages.message);
   const slugPerId = new Map((stages ?? []).map((s) => [s.id as string, s.slug as string]));
-  if (slugPerId.size === 0) return { stato: "pipeline_assente", candidati: 0, create: 0 };
+  if (slugPerId.size === 0) return { stato: "pipeline_assente", candidati: 0, create: 0, esclusi: contatoriVuoti() };
 
   const { inizio, fine } = giornataRoma(ora);
   const [giorno, pendenti] = await Promise.all([
@@ -51,11 +66,11 @@ export async function generaProposte(admin: SupabaseClient, orgId: string, ora =
     return errore("limite", giorno.error?.message ?? pendenti.error?.message ?? "count_failed");
   }
   const spazio = Math.max(0, Math.min(OUTREACH_MAX_GIORNO - giorno.count, OUTREACH_MAX_GIORNO - pendenti.count));
-  if (spazio === 0) return { stato: "ok", candidati: 0, create: 0 };
+  if (spazio === 0) return { stato: "ok", candidati: 0, create: 0, esclusi: contatoriVuoti() };
 
   const { data: leads, error: eLeads } = await admin
     .from("crm_leads")
-    .select("id, title, tags, stage_id, contact_id, contacts!inner(email, phone_number, is_blocked)")
+    .select("id, title, tags, stage_id, contact_id, contacts!inner(email, phone_number, is_blocked, tags)")
     .eq("organization_id", orgId)
     .eq("pipeline_id", pipeline.id)
     .eq("status", "open")
@@ -68,13 +83,14 @@ export async function generaProposte(admin: SupabaseClient, orgId: string, ora =
 
   const candidati: Candidato[] = (leads ?? []).map((l) => {
     const contatto = (Array.isArray(l.contacts) ? l.contacts[0] : l.contacts) as
-      | { email: string | null; phone_number: string | null; is_blocked: boolean }
+      | { email: string | null; phone_number: string | null; is_blocked: boolean; tags?: string[] | null }
       | null;
     return {
       leadId: l.id as string,
       contactId: (l.contact_id as string | null) ?? null,
       title: (l.title as string | null) ?? null,
       tags: (l.tags as string[] | null) ?? [],
+      contactTags: contatto?.tags ?? [],
       email: contatto?.email ?? null,
       phone: contatto?.phone_number ?? null,
       // Senza contatto non sappiamo se è bloccato: trattalo come bloccato.
@@ -84,26 +100,50 @@ export async function generaProposte(admin: SupabaseClient, orgId: string, ora =
   });
 
   const storico: StoricoProposta[] = [];
+  const visti = new Set<string>();
   // Limita gli ID per richiesta: la query GET con tutti i lead supera il limite degli header.
-  for (let i = 0; i < candidati.length; i += BLOCCO_STORICO) {
-    const { data: storicoRows, error: eStorico } = await admin
-      .from("outreach_proposals")
-      .select("lead_id, kind, status, created_at, sent_at, dry_run")
-      .eq("organization_id", orgId)
-      .in("lead_id", candidati.slice(i, i + BLOCCO_STORICO).map((c) => c.leadId));
-    if (eStorico) return errore("storico", eStorico.message, candidati.length);
-    storico.push(...(storicoRows ?? []).map((s) => ({
-      leadId: s.lead_id as string,
-      kind: s.kind as StoricoProposta["kind"],
-      status: s.status as StoricoProposta["status"],
-      createdAt: s.created_at as string,
-      sentAt: (s.sent_at as string | null) ?? null,
-      dryRun: s.dry_run as boolean,
-    })));
+  // Prima i lead, poi contatto e indirizzo: un primo contatto vero su un altro
+  // lead dello stesso contatto non deve rinascere qui.
+  async function leggi(colonna: "lead_id" | "contact_id" | "to_address", ids: string[]): Promise<string | null> {
+    const unici = [...new Set(ids.map((id) => {
+      const pulito = id.trim();
+      // L'indirizzo si confronta in minuscolo. Il «+tag» non si toglie.
+      return colonna === "to_address" ? pulito.toLowerCase() : pulito;
+    }).filter((id) => id.length > 0))];
+    for (let i = 0; i < unici.length; i += BLOCCO_STORICO) {
+      const { data: storicoRows, error: eStorico } = await admin
+        .from("outreach_proposals")
+        .select("id, lead_id, contact_id, to_address, kind, status, created_at, sent_at, dry_run")
+        .eq("organization_id", orgId)
+        .in(colonna, unici.slice(i, i + BLOCCO_STORICO));
+      if (eStorico) return eStorico.message;
+      for (const row of (storicoRows ?? []) as RigaStorico[]) {
+        if (visti.has(row.id)) continue;
+        visti.add(row.id);
+        storico.push({
+          leadId: row.lead_id,
+          contactId: row.contact_id ?? null,
+          toAddress: row.to_address ?? null,
+          kind: row.kind,
+          status: row.status,
+          createdAt: row.created_at,
+          sentAt: row.sent_at ?? null,
+          dryRun: row.dry_run,
+        });
+      }
+    }
+    return null;
   }
 
+  const eLead = await leggi("lead_id", candidati.map((c) => c.leadId));
+  if (eLead) return errore("storico", eLead, candidati.length);
+  const eContatto = await leggi("contact_id", candidati.flatMap((c) => (c.contactId ? [c.contactId] : [])));
+  if (eContatto) return errore("storico", eContatto, candidati.length);
+  const eIndirizzo = await leggi("to_address", candidati.flatMap((c) => (c.email ? [c.email.trim().toLowerCase()] : [])));
+  if (eIndirizzo) return errore("storico", eIndirizzo, candidati.length);
+
   const nuove = scegliProposte(candidati, storico, ora);
-  if (nuove.length === 0) return { stato: "ok", candidati: candidati.length, create: 0 };
+  if (nuove.length === 0) return { stato: "ok", candidati: candidati.length, create: 0, esclusi: nuove.esclusi };
 
   // Non è l'`upsert(..., { onConflict: "lead_id,channel" })` del piano: su
   // questa tabella l'unico indice unico su (lead_id, channel) è PARZIALE
@@ -139,5 +179,5 @@ export async function generaProposte(admin: SupabaseClient, orgId: string, ora =
     }
     if (riga?.id) create.push(riga.id as string);
   }
-  return { stato: "ok", candidati: candidati.length, create: create.length };
+  return { stato: "ok", candidati: candidati.length, create: create.length, esclusi: nuove.esclusi };
 }

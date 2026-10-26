@@ -12,7 +12,7 @@ import { sendMessageHandler } from "@/app/api/v1/messages/_handler";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { supportWriteError } from "@/lib/impersonate/support";
 import { emitLeadActivity } from "@/lib/leads/activity-emitter";
-import { isOutreachDryRun } from "@/lib/outreach/config";
+import { isOutreachDryRun, STATI_NEL_TETTO_INVII } from "@/lib/outreach/config";
 import { eseguiDecisione } from "@/lib/outreach/execute";
 import { spostaInAttesa } from "@/lib/outreach/move-to-waiting";
 import { createClient } from "@/lib/supabase/server";
@@ -49,7 +49,7 @@ export async function decidiProposta(id: string, azione: "approva" | "rifiuta"):
 
   const { data: row } = await supabase
     .from("outreach_proposals")
-    .select("id, organization_id, lead_id, contact_id, channel, kind, status, to_address, subject, body, contacts(is_blocked, phone_number)")
+    .select("id, organization_id, lead_id, contact_id, channel, kind, status, to_address, subject, body, dry_run, contacts(is_blocked, phone_number)")
     .eq("id", id)
     .eq("organization_id", ctx.org.orgId)
     .maybeSingle();
@@ -76,24 +76,21 @@ export async function decidiProposta(id: string, azione: "approva" | "rifiuta"):
       id: row.id, organizationId: row.organization_id, leadId: row.lead_id, contactId: row.contact_id,
       kind: row.kind, channel: row.channel, status: row.status, toAddress: row.to_address, subject: row.subject, body: row.body,
       contactBlocked: contatto?.is_blocked ?? false,
+      creataInProva: row.dry_run === true,
     },
     { azione, userId: ctx.user.id },
     {
       dryRun: isOutreachDryRun(),
       contaInviiVeri: async () => {
         const { inizio, fine } = giornataRoma(new Date());
-        const [inviati, prenotati] = await Promise.all([
+        const conteggi = await Promise.all(STATI_NEL_TETTO_INVII.map((s) =>
           supabase.from("outreach_proposals").select("id", { count: "exact", head: true })
-            .eq("organization_id", ctx.org.orgId).eq("status", "sent").eq("dry_run", false)
-            .gte("sent_at", inizio).lt("sent_at", fine),
-          supabase.from("outreach_proposals").select("id", { count: "exact", head: true })
-            .eq("organization_id", ctx.org.orgId).eq("status", "approved").eq("dry_run", false)
-            .gte("decided_at", inizio).lt("decided_at", fine),
-        ]);
-        if (inviati.error || prenotati.error || inviati.count === null || prenotati.count === null) {
-          throw new Error(inviati.error?.message ?? prenotati.error?.message ?? "count_failed");
-        }
-        return inviati.count + prenotati.count;
+            .eq("organization_id", ctx.org.orgId).eq("status", s.status).eq("dry_run", false)
+            .gte(s.tempo, inizio).lt(s.tempo, fine),
+        ));
+        const rotto = conteggi.find((c) => c.error || c.count === null);
+        if (rotto) throw new Error(rotto.error?.message ?? "count_failed");
+        return conteggi.reduce((n, c) => n + (c.count ?? 0), 0);
       },
       send: async (a) => {
         if (row.channel === "email") return inviaEmailOutreach(a);
