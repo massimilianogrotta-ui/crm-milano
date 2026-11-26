@@ -175,7 +175,7 @@ describe("remetente", () => {
     // É a decisão que joga o fluxo no caminho bom que já existe: `pending_review`
     // no worker de LGPD e o link de aceite na tela do convite. Antes, o domínio
     // herdado fazia a Resend recusar e o operador caçava rede e contêiner.
-    process.env.RESEND_API_KEY = "re_chave_valida_de_teste";
+    process.env.RESEND_API_KEY = "re_test_placeholder";
     process.env.RESEND_FROM_EMAIL = "";
     const { sendEmail, isEmailConfigured } = await import("@/lib/email/resend");
 
@@ -185,7 +185,7 @@ describe("remetente", () => {
   });
 
   it("domínio não verificado tem NOME próprio, e não vira 'send_failed' genérico", async () => {
-    process.env.RESEND_API_KEY = "re_chave_valida_de_teste";
+    process.env.RESEND_API_KEY = "re_test_placeholder";
     process.env.RESEND_FROM_EMAIL = "nao-responda@revenda.com.br";
     vi.doMock("resend", () => ({
       Resend: class {
@@ -212,7 +212,7 @@ describe("remetente", () => {
   });
 
   it("limite de envio continua distinguível do resto", async () => {
-    process.env.RESEND_API_KEY = "re_chave_valida_de_teste";
+    process.env.RESEND_API_KEY = "re_test_placeholder";
     process.env.RESEND_FROM_EMAIL = "nao-responda@revenda.com.br";
     vi.doMock("resend", () => ({
       Resend: class {

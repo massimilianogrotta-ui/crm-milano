@@ -11,6 +11,7 @@ function cand(over: Partial<Candidato> = {}): Candidato {
     contactId: "c1",
     title: "Studio Dentistico Bianchi",
     tags: [],
+    contactTags: [],
     email: "info@bianchi.it",
     phone: "+39 333 1234567",
     isBlocked: false,
@@ -69,8 +70,63 @@ describe("scegliProposte", () => {
     expect(scegliProposte([c], [inviato, ricontattoProva], ORA, wa)[0]?.kind).toBe("followup");
   });
   it("mai più di 10 per giro", () => {
-    const tanti = Array.from({ length: 50 }, (_, i) => cand({ leadId: `l${i}` }));
+    const tanti = Array.from({ length: 50 }, (_, i) => cand({
+      leadId: `l${i}`,
+      contactId: `c${i}`,
+      email: `info@bianchi${i}.it`,
+    }));
     expect(scegliProposte(tanti, [], ORA)).toHaveLength(10);
+  });
+  it("salva l'indirizzo senza spazi e in minuscolo; il +tag resta", () => {
+    const r = scegliProposte([cand({ email: "  Info+News@Bianchi.IT " })], [], ORA);
+    expect(r).toHaveLength(1);
+    expect(r[0]?.toAddress).toBe("info+news@bianchi.it");
+  });
+  it("maiuscole e spazi sono lo stesso indirizzo nel giro", () => {
+    const r = scegliProposte([
+      cand({ leadId: "a", contactId: "c1", email: "info@bianchi.it" }),
+      cand({ leadId: "b", contactId: "c2", email: "  INFO@Bianchi.it " }),
+    ], [], ORA);
+    expect(r.map((p) => p.leadId)).toEqual(["a"]);
+    expect(r.esclusi.contatto_condiviso).toBe(1);
+  });
+  it("4 lead sullo stesso contatto: vince il più vecchio, gli altri sono contatto condiviso", () => {
+    const leads = [0, 1, 2, 3].map((i) => cand({ leadId: `l${i}`, contactId: "stesso", email: "info@bianchi.it" }));
+    const r = scegliProposte(leads, [], ORA);
+    expect(r.map((p) => p.leadId)).toEqual(["l0"]);
+    expect(r.esclusi.contatto_condiviso).toBe(3);
+    expect(r.esclusi.dominio_gia_nel_giro).toBe(0);
+  });
+  it("due contatti diversi, stesso dominio non freemail: una sola proposta", () => {
+    const r = scegliProposte([
+      cand({ leadId: "a", contactId: "c1", email: "info@dentalpro.it", title: "Dentalpro Milano" }),
+      cand({ leadId: "b", contactId: "c2", email: "segreteria@dentalpro.it", title: "Dentalpro Milano" }),
+    ], [], ORA);
+    expect(r.map((p) => p.leadId)).toEqual(["a"]);
+    expect(r.esclusi.dominio_gia_nel_giro).toBe(1);
+  });
+  it("un first_contact reale sullo stesso indirizzo, anche di un altro lead, blocca", () => {
+    const storico: StoricoProposta = {
+      leadId: "altro", contactId: "c9", toAddress: "info@bianchi.it",
+      kind: "first_contact", status: "sent", createdAt: giorniFa(40), sentAt: giorniFa(40), dryRun: false,
+    };
+    const r = scegliProposte([cand({ contactId: "c1" })], [storico], ORA);
+    expect(r).toHaveLength(0);
+    expect(r.esclusi.gia_contattato).toBe(1);
+    const perContatto = scegliProposte(
+      [cand({ email: "info@altro.it", title: "Altro Studio" })],
+      [{ ...storico, toAddress: "info@altro.it", contactId: "c1" }],
+      ORA,
+    );
+    expect(perContatto).toHaveLength(0);
+  });
+  it("un first_contact di prova o fallito sullo stesso indirizzo non blocca", () => {
+    const base: StoricoProposta = {
+      leadId: "altro", contactId: "c9", toAddress: "info@bianchi.it",
+      kind: "first_contact", status: "sent", createdAt: giorniFa(40), sentAt: giorniFa(40), dryRun: true,
+    };
+    expect(scegliProposte([cand()], [base], ORA)).toHaveLength(1);
+    expect(scegliProposte([cand()], [{ ...base, dryRun: false, status: "failed" }], ORA)).toHaveLength(1);
   });
 });
 

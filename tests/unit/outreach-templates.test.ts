@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { renderOutreach, segmentoDelLead } from "@/lib/outreach/templates";
+import { mittenteOutreach } from "@/lib/outreach/config";
+import { OUTREACH_SIGNATURE, renderOutreach, segmentoDelLead } from "@/lib/outreach/templates";
 
 describe("segmentoDelLead", () => {
   it("riconosce i dentisti da titolo o tag", () => {
@@ -25,13 +26,24 @@ describe("renderOutreach", () => {
     expect(r.body).toContain("rispondere STOP");
     expect(r.body).not.toContain("Costo");
   });
-  it("mette il nome dello studio e il footer STOP", () => {
+  it("primo contatto v3: oggetto, Lei, firma unica e STOP", () => {
     const r = renderOutreach({ kind: "first_contact", segmento: "dentista", nomeStudio: "Studio Bianchi" });
-    expect(r.templateRef).toBe("first_contact.dentista.v2");
-    expect(r.subject).toContain("Demo 10 min");
-    expect(r.body).toContain("«Studio Bianchi»");
-    expect(r.body).toContain("STOP");
-    expect(r.body).toContain("https://demo-mini.all-io.com");
+    expect(r.templateRef).toBe("first_contact.dentista.v3");
+    expect(r.subject).toBe("Studio Bianchi: contatti, appuntamenti e follow-up pazienti");
+    expect(r.body).toContain("All-io CRM Assist");
+    expect(r.body).toContain("risponda STOP");
+    expect(r.body).toContain("Studio Bianchi");
+    expect(r.body).toContain("senza cambiare gestionale");
+    expect(r.body).toContain("nulla parte senza il suo ok");
+    expect(r.body).toContain(OUTREACH_SIGNATURE);
+    expect(r.body).not.toMatch(/costo|canon|€|prezz|\bMax\b|wa\.me/i);
+    expect(mittenteOutreach().fromName).toBe(OUTREACH_SIGNATURE);
+    expect(renderOutreach({ kind: "first_contact", segmento: "estetica", nomeStudio: "Centro Esempio" }).templateRef)
+      .toBe("first_contact.estetica.v3");
+    expect(renderOutreach({ kind: "first_contact", segmento: "estetica", nomeStudio: "Centro Esempio" }).subject)
+      .toContain("follow-up clienti");
+    expect(renderOutreach({ kind: "first_contact", segmento: "generico", nomeStudio: "Centro Esempio" }).templateRef)
+      .toBe("first_contact.generico.v3");
   });
   it("non contiene mai prezzi", () => {
     for (const kind of ["first_contact", "followup"] as const) {

@@ -15,10 +15,13 @@ build/
 .turbo/
 .vercel/
 
-# Env — ignora todo .env*, exceto os templates de exemplo
+# Env — ignora todo .env*, exceto os templates de exemplo e o segnaposto da suíte.
+# .env.test só tem placeholder óbvio (nenhuma chave). O setup de teste lê esse
+# arquivo e mais nenhum: .env, .env.local e .env.production ficam de fora.
 .env*
 !.env.example
 !.env.hostgator.example
+!.env.test
 
 # Testing & coverage
 coverage/

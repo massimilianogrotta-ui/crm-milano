@@ -1,6 +1,9 @@
 export type Segmento = "dentista" | "estetica" | "generico";
 export type OutreachKind = "first_contact" | "followup";
 
+/** Firma e nome mittente. Una sola stringa: i due non possono divergere. */
+export const OUTREACH_SIGNATURE = "Massi · All-io CRM Assist";
+
 export function segmentoDelLead(lead: { title: string | null; tags: string[] | null }): Segmento {
   const testo = [lead.title ?? "", ...(lead.tags ?? [])].join(" ").toLowerCase();
   if (/dent|odont|ortodon/.test(testo)) return "dentista";
@@ -8,26 +11,14 @@ export function segmentoDelLead(lead: { title: string | null; tags: string[] | n
   return "generico";
 }
 
-const CTA_DEMO = "https://demo-mini.all-io.com";
-const CTA_WA = "https://wa.me/393780699002";
-
-const CHI: Record<Segmento, { aiuto: string; pazienti: string; luogo: string }> = {
-  dentista: { aiuto: "studi dentali", pazienti: "pazienti", luogo: "dello studio" },
-  estetica: { aiuto: "cliniche e centri estetici", pazienti: "clienti", luogo: "del centro" },
-  generico: { aiuto: "studi e centri di Milano", pazienti: "clienti", luogo: "della struttura" },
+const CHI: Record<Segmento, { pazienti: string }> = {
+  dentista: { pazienti: "pazienti" },
+  estetica: { pazienti: "clienti" },
+  generico: { pazienti: "clienti" },
 };
 
 function pulisci(nome: string): string {
   return nome.replace(/[<>"\r\n]/g, "").trim().slice(0, 120);
-}
-
-function footer(nomeStudio: string, luogo: string): string {
-  return [
-    "— Max · All-io · Milano",
-    "",
-    `Riceve questa email come titolare/responsabile ${luogo} «${nomeStudio}».`,
-    'Non desidera più riceverle? Risponda con "STOP".',
-  ].join("\n");
 }
 
 export function renderOutreach(input: {
@@ -37,30 +28,30 @@ export function renderOutreach(input: {
 }): { templateRef: string; subject: string; body: string } {
   const nome = pulisci(input.nomeStudio);
   const c = CHI[input.segmento];
-  const templateRef = `${input.kind}.${input.segmento}.v2`;
 
   if (input.kind === "first_contact") {
     return {
-      templateRef,
-      subject: `Demo 10 min — agenda e ritorni ${c.pazienti} (senza cambiare gestionale)`,
+      templateRef: `first_contact.${input.segmento}.v3`,
+      subject: `${nome}: contatti, appuntamenti e follow-up ${c.pazienti}`,
       body: [
         "Buongiorno,",
-        `sono Max di All-io: aiuto ${c.aiuto} a ridurre i buchi in agenda e i mancati ritorni dei ${c.pazienti}.`,
         "",
-        "In concreto, senza cambiare il suo gestionale:",
-        "promemoria, richiami e prenotazioni su WhatsApp, installati da me in un giorno.",
-        "Lei non deve toccare nulla. Costo fisso mensile, niente canoni nascosti.",
+        `mi chiamo Massi e lavoro con All-io. Le scrivo perché ${nome} potrebbe trovare utile All-io CRM Assist: uno strumento per gestire contatti, appuntamenti e follow-up dei ${c.pazienti}, senza cambiare gestionale. Se ne usate già uno, lo colleghiamo.`,
         "",
-        `Le va di vedere una demo di 10 minuti questa settimana? Può provarla qui: ${CTA_DEMO}`,
-        `oppure scrivermi su WhatsApp: ${CTA_WA}`,
+        "L'agente prepara i messaggi, lei li autorizza: nulla parte senza il suo ok.",
         "",
-        footer(nome, c.luogo),
+        "Le andrebbe una breve demo di 10 minuti nei prossimi giorni?",
+        "",
+        "Cordiali saluti,",
+        OUTREACH_SIGNATURE,
+        "",
+        "Se preferisce non ricevere altre email, risponda STOP.",
       ].join("\n"),
     };
   }
 
   return {
-    templateRef: `wa.${templateRef}`,
+    templateRef: `wa.followup.${input.segmento}.v2`,
     subject: "Sollecito WhatsApp",
     body: [
       "Buongiorno,",

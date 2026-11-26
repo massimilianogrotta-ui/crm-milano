@@ -1,5 +1,5 @@
 import type { OutreachKind } from "@/lib/outreach/templates";
-import { OUTREACH_MAX_GIORNO } from "@/lib/outreach/config";
+import { tettoInvii } from "@/lib/outreach/config";
 
 export interface PropostaDaEseguire {
   id: string;
@@ -13,6 +13,8 @@ export interface PropostaDaEseguire {
   subject: string | null;
   body: string;
   contactBlocked: boolean;
+  /** Nata con dry_run. Non diventa mai un invio reale. */
+  creataInProva: boolean;
 }
 
 export interface DipendenzeEsecuzione {
@@ -67,7 +69,20 @@ export async function eseguiDecisione(
     return ok ? { status: "rejected" } : { status: "non_pending" };
   }
 
-  if (!deps.dryRun && await deps.contaInviiVeri() >= OUTREACH_MAX_GIORNO) return { status: "limite_giorno" };
+  // Fail-closed, prima del tetto: una bozza nata in prova non parte mai per
+  // davvero, anche se il conteggio degli invii fallisse.
+  if (p.creataInProva && !deps.dryRun) {
+    const ok = await deps.salva({
+      expectStatus: "pending",
+      status: "rejected",
+      decided_by: d.userId,
+      decided_at: ora,
+      error: "creata_in_prova",
+    });
+    return ok ? { status: "rejected" } : { status: "non_pending" };
+  }
+
+  if (!deps.dryRun && await deps.contaInviiVeri() >= tettoInvii()) return { status: "limite_giorno" };
 
   // Blocca la proposta prima di inviare: due clic non producono due email.
   const preso = await deps.salva({ expectStatus: "pending", status: "approved", decided_by: d.userId, decided_at: ora, dry_run: deps.dryRun });

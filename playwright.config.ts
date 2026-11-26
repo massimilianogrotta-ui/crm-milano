@@ -34,6 +34,11 @@ function envDoE2E(): Record<string, string> {
   if (!url.startsWith("http://127.0.0.1") && !url.startsWith("http://localhost")) {
     throw new Error(`.env.e2e aponta para um Supabase que não é local (${url}) — recusado.`);
   }
+  // O `next start` lê também o `.env.local`. Chave ausente aqui chega de lá:
+  // um OUTREACH_DRY_RUN=false ou uma RESEND_API_KEY real no checkout de
+  // trabalho. Forçar depois da leitura, para um .env.e2e antigo não vencer.
+  env.OUTREACH_DRY_RUN = "true";
+  env.RESEND_API_KEY = "";
   return env;
 }
 

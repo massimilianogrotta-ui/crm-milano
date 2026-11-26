@@ -1,4 +1,5 @@
 import { env } from "@/lib/env";
+import { OUTREACH_SIGNATURE } from "@/lib/outreach/templates";
 
 /**
  * Interruttore di sicurezza: qualsiasi valore diverso da "false" esatto
@@ -20,10 +21,31 @@ export function outreachOrgId(): string | null {
 
 export const OUTREACH_PIPELINE_SLUG = "milano-prospect";
 export const OUTREACH_MAX_GIORNO = 10;
+
+/**
+ * Invii reali al giorno. Il default 5 e il rifiuto di "abc" stanno nello schema
+ * (`OUTREACH_TETTO_INVII`): qui si applica solo l'intervallo [1, 30]. 30 è un
+ * tetto rigido in codice — un valore più alto non passa.
+ */
+export function tettoInvii(raw: number = env.OUTREACH_TETTO_INVII): number {
+  if (!Number.isInteger(raw)) return 5;
+  return Math.min(30, Math.max(1, raw));
+}
+
+/**
+ * Stati che consumano il tetto degli invii reali, per organizzazione.
+ * `failed` entra tutto: non c'è un codice che isoli il timeout, e un timeout
+ * può arrivare dopo che il provider ha già accettato. Il tetto non è globale.
+ */
+export const STATI_NEL_TETTO_INVII = [
+  { status: "sent", tempo: "sent_at" },
+  { status: "approved", tempo: "decided_at" },
+  { status: "failed", tempo: "decided_at" },
+] as const;
 export const OUTREACH_WA_FOLLOWUP_GIORNI = env.OUTREACH_WA_FOLLOWUP_GIORNI;
 export const outreachWaFollowup = () => env.OUTREACH_WA_FOLLOWUP === "true";
 export function mittenteOutreach(fromEmail = env.OUTREACH_FROM_EMAIL, replyTo = env.OUTREACH_REPLY_TO) {
-  return { fromName: "Max · All-io", fromEmail: fromEmail || undefined, replyTo: replyTo || undefined };
+  return { fromName: OUTREACH_SIGNATURE, fromEmail: fromEmail || undefined, replyTo: replyTo || undefined };
 }
 export const STAGE_DA_CONTATTARE = "da-contattare";
 export const STAGE_IN_ATTESA = "in-attesa";

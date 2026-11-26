@@ -139,6 +139,10 @@ NEXT_TELEMETRY_DISABLED=1
 # exercita a política do DSN da comunidade — quem a guarda é
 # \`tests/unit/sentry-comunidade-so-erro.test.ts\`.
 SENTRY_DSN=off
+# A suíte não envia outreach e não herda a chave Resend do .env.local.
+# Vazio é valor: o Next não substitui uma variável já presente no processo.
+OUTREACH_DRY_RUN=true
+RESEND_API_KEY=
 EOF
 
 echo "==> .env.e2e gerado, apontando para $API_URL"
