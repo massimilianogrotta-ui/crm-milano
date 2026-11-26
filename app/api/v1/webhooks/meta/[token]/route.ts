@@ -23,8 +23,10 @@ import { fail } from "@/lib/api/wrappers";
 import { lerEnvelopeMeta } from "@/lib/channels/meta/envelope";
 import { parseMetaWebhook, verificationChallenge, verifyMetaSignature } from "@/lib/channels/meta/webhook";
 import { ingestMetaInbound } from "@/lib/channels/meta/ingest";
+import { aplicarStatusDeEntrega } from "@/lib/channels/meta/status-entrega";
 import { metaSessionByWebhookToken } from "@/lib/channels/meta/session";
 import { logger } from "@/lib/logger";
+import { maskPhone, redactPhones } from "@/lib/phones/mask";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
@@ -123,11 +125,11 @@ export async function POST(req: NextRequest, ctx: RouteCtx): Promise<NextRespons
       if (r.status === "failed" || r.status === "no_session") {
         // 2xx continua (a Meta re-entregaria em loop), mas a falha NÃO fica muda:
         // vai ao log estruturado e ao corpo da resposta.
-        console.error("[meta.ingest] inbound não ingerido", {
+        logger.error("[meta.ingest] inbound não ingerido", {
           status: r.status,
-          reason: r.status === "failed" ? r.reason : undefined,
+          reason: r.status === "failed" ? redactPhones(r.reason) : undefined,
           external_id: e.externalId,
-          phone_number_id: e.phoneNumberId,
+          from: maskPhone(e.from),
         });
       }
       continue;
@@ -142,11 +144,12 @@ export async function POST(req: NextRequest, ctx: RouteCtx): Promise<NextRespons
         .eq("name", e.templateName)
         .eq("language", e.templateLanguage);
     } else {
-      await admin
-        .from("messages")
-        .update({ status: e.status === "failed" ? "failed" : "sent", updated_at: now })
-        .eq("organization_id", session.organizationId)
-        .eq("external_id", e.externalId);
+      await aplicarStatusDeEntrega(admin, {
+        organizationId: session.organizationId,
+        externalId: e.externalId,
+        status: e.status,
+        agora: now,
+      });
     }
   }
 

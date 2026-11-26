@@ -19,9 +19,12 @@
  *    da bolha de voz. E a Meta **não converte** — quem manda mp3 com `voice:true` erra;
  *    o outro canal converte por nós, este não.
  */
+import { logger } from "@/lib/logger";
+import { maskPhone, redactPhones, redactSecrets } from "@/lib/phones/mask";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { metaContactsPayload } from "@/lib/channels/meta/contact-card";
 import { resolveMetaCreds } from "../meta/credentials";
+import { sendTemplateForSession } from "../meta/send-template-for-session";
 import type {
   ChannelAdapter,
   ChannelHealth,
@@ -228,9 +231,31 @@ export const metaCloudAdapter: ChannelAdapter = {
       // `details` é o campo que diz QUAL parâmetro divergiu; sem ele o operador lê
       // "Parameter format does not match" e não tem pista nenhuma.
       const detalhe = body.error?.error_data?.details ?? body.error?.message ?? `http_${res.status}`;
+      logger.error("meta.send falhou", {
+        organization_id: envelope.organizationId,
+        to: maskPhone(envelope.to),
+        detail: redactSecrets(redactPhones(detalhe)).slice(0, 200),
+      });
       throw new Error(`meta_${body.error?.code ?? res.status}: ${detalhe}`);
     }
 
     return { externalId: body.messages?.[0]?.id ?? null };
+  },
+
+  /**
+   * Modelo pela credencial DESTA sessão. O handler só chega aqui quando o
+   * adapter declara o método; sem ele, o caminho antigo lia o token global.
+   */
+  async sendTemplate(input) {
+    const externalId = await sendTemplateForSession(createAdminClient(), {
+      beforeSend: input.beforeSend,
+      organizationId: input.organizationId,
+      phoneNumberId: input.sessionRef,
+      to: input.to,
+      name: input.name,
+      language: input.language,
+      values: input.values,
+    });
+    return { externalId };
   },
 };

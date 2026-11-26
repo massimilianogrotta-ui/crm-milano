@@ -19,6 +19,7 @@ import { emitLeadActivity } from "@/lib/leads/activity-emitter";
 import { classificarLeadInicial, type ResultadoClassificacaoInicial } from "@/lib/leads/classificacao-inicial";
 import type { CreateLeadInput } from "@/lib/schemas";
 import { mapInboundPayload, verifyInboundSignature, type FieldMap } from "@/lib/webhooks/inbound";
+import { paisDaOrganizacao } from "@/lib/phones/pais";
 import { encontrarContatoPorTelefoneComNome } from "@/lib/channels/contato-por-telefone";
 import {
   buildContactConsentGrant,
@@ -180,8 +181,9 @@ export async function POST(req: NextRequest, ctx: RouteCtx): Promise<NextRespons
   // níveis aninhados que o mapeador genérico descarta por desenho (ele só lê
   // chave de topo). Detecta a forma UMA vez aqui; `respondiMapped` alimenta
   // tanto o idempotency key quanto o mapeamento de campos mais abaixo.
+  const paisTelefone = await paisDaOrganizacao(admin, source.organization_id as string);
   const respondiMapped: RespondiMapped | null = isRespondiPayload(payload)
-    ? mapRespondiPayload(payload)
+    ? mapRespondiPayload(payload, paisTelefone)
     : null;
 
   // RD Station manda `{ leads: [ {...} ] }` — mesmo problema do Respondi (o
@@ -190,7 +192,7 @@ export async function POST(req: NextRequest, ctx: RouteCtx): Promise<NextRespons
   // precedência: um payload nunca é dos dois.
   const rdStationMapped: RdStationMapped | null =
     respondiMapped === null && isRdStationPayload(payload)
-      ? mapRdStationPayload(payload)
+      ? mapRdStationPayload(payload, paisTelefone)
       : null;
 
   // Idempotência (spec §5): `external_id` é campo reservado do envio — quem
@@ -261,7 +263,7 @@ export async function POST(req: NextRequest, ctx: RouteCtx): Promise<NextRespons
   const mapped =
     respondiMapped ??
     rdStationMapped ??
-    mapInboundPayload(externalId ? payloadForMapping : payload, fieldMap);
+    mapInboundPayload(externalId ? payloadForMapping : payload, fieldMap, paisTelefone);
   if (!mapped.phone) {
     const rawPhone = findRawPhoneIfUnnormalized(payload, fieldMap);
     if (rawPhone) mapped.source_metadata.raw_phone = rawPhone;

@@ -94,6 +94,10 @@ export function MessageBubble({
     if (!isOutbound) return null;
     if (message.sent_via === "ai") return "IA";
     if (message.sent_via === "external_device") return "Celular";
+    // Confirmação de saída gravada pelo servidor, antes de bloquear o contato.
+    // Não é a IA nem um atendente: o balão precisa nomear, senão parece mensagem
+    // de pessoa.
+    if (message.sent_via === "system") return "Sistema";
     if (message.sent_via === "user" || message.sent_via === "crm") {
       // "Você" exige as DUAS pontas: saber quem lê e saber quem enviou. Falta
       // qualquer uma, o rótulo cai para "Atendente" — que continua dizendo o

@@ -78,6 +78,23 @@ export function estadoDaJanela(
 }
 
 /**
+ * Texto livre que o handler deve recusar ANTES de falar com o transporte.
+ *
+ * Só o canal oficial. O intermediado tem a mesma janela na capacidade, mas o
+ * handler dele já tem desfecho próprio e esta recusa mudaria envio que hoje
+ * sai. `null` em `lastInboundAt` é janela fechada: ninguém escreveu, texto
+ * livre não tem por onde passar.
+ */
+export function textoLivreForaDaJanela(
+  provider: string | null | undefined,
+  lastInboundAt: string | null | undefined,
+  agora: Date = new Date(),
+): boolean {
+  if (provider !== "meta_cloud") return false;
+  return estadoDaJanela(provider, lastInboundAt ?? null, agora).tipo === "fechada";
+}
+
+/**
  * "23h 40m", "40m", "3m".
  *
  * Sem segundos: um número que muda sozinho na tela puxa o olho para o relógio

@@ -491,6 +491,8 @@ export const AUDIT_ACTIONS = [
   "voice.session_unpaired",
   /** Ogni chiamata all'API riservata dell'agente Account manager (lettura e scrittura). */
   "account_manager.api_call",
+  /** Concessão de marketing gravada em contacts.consent, com carimbo. */
+  "contact.consent_granted",
 ] as const;
 
 /** Um código de auditoria. Derivado de `AUDIT_ACTIONS` — não redigite a lista. */

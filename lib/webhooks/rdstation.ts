@@ -36,7 +36,8 @@
  * estrutural na rota. Documentado no checkpoint.
  */
 import type { MappedLead } from "@/lib/webhooks/inbound";
-import { normalizePhoneBR } from "@/lib/webhooks/inbound";
+import { normalizePhone } from "@/lib/webhooks/inbound";
+import type { PaisTelefone } from "@/lib/phones/pais";
 
 function isRecord(v: unknown): v is Record<string, unknown> {
   return typeof v === "object" && v !== null && !Array.isArray(v);
@@ -122,7 +123,7 @@ export interface RdStationMapped extends MappedLead {
  * Extrai identidade + metadados seguros do envelope RD. Puro, sem I/O.
  * Reusa `normalizePhoneBR` — o telefone chega mascarado ("+55 (32) 9922-8971").
  */
-export function mapRdStationPayload(payload: unknown): RdStationMapped {
+export function mapRdStationPayload(payload: unknown, pais: PaisTelefone = "BR"): RdStationMapped {
   const lead = primeiroLead(payload) ?? {};
   const first = conversaoContent(lead, "first_conversion");
   const last = conversaoContent(lead, "last_conversion");
@@ -167,7 +168,7 @@ export function mapRdStationPayload(payload: unknown): RdStationMapped {
 
   return {
     name,
-    phone: normalizePhoneBR(phoneRaw),
+    phone: normalizePhone(phoneRaw, pais),
     email,
     custom_fields,
     source_metadata: {},

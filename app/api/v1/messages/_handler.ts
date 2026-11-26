@@ -35,6 +35,8 @@ import {
 } from "@/lib/channels";
 import { ARCHIVED_AT, queryTolerantToMissingArchived } from "@/lib/channels/archived";
 import { conferirDefinicao } from "@/lib/channels/conferir-definicao";
+import { textoLivreForaDaJanela } from "@/lib/channels/janela";
+import { barrarTemplateDeMarketingSemConsentimento } from "@/lib/contacts/consentimento";
 import { isMediaPathOwnedBy } from "@/lib/messaging/media/upload-validation";
 import {
   buildVcard,
@@ -308,7 +310,7 @@ export async function sendMessageHandler(
   // envio com 42703. Sem a coluna, nada está arquivado — e a consulta sem ela é a
   // consulta certa (ver lib/channels/archived).
   const convSelect = (comArchived: boolean) =>
-    `id, organization_id, contact_id, channel_session_id, is_group, group_chat_id, bot_silenced_until, provider_conversation_id, contacts:contact_id(phone_number, wa_identity, wa_lid, is_blocked), channel_sessions:channel_session_id(${CHANNEL_SESSION_REF_COLUMNS}, status${comArchived ? `, ${ARCHIVED_AT}` : ""})`;
+    `id, organization_id, contact_id, channel_session_id, is_group, group_chat_id, bot_silenced_until, provider_conversation_id, last_inbound_at, contacts:contact_id(phone_number, wa_identity, wa_lid, is_blocked), channel_sessions:channel_session_id(${CHANNEL_SESSION_REF_COLUMNS}, status${comArchived ? `, ${ARCHIVED_AT}` : ""})`;
   const { data: conv, error: convErr } = await queryTolerantToMissingArchived(
     () =>
       supabase
@@ -347,6 +349,8 @@ export async function sendMessageHandler(
     bot_silenced_until: string | null;
     /** Thread do provider, quando ele endereça por thread própria (migration 0132). */
     provider_conversation_id: string | null;
+    /** Abre a janela de texto livre. `null` = fechada no canal que a exige. */
+    last_inbound_at: string | null;
     contacts: {
       phone_number: string | null;
       wa_identity: string | null;
@@ -658,6 +662,47 @@ export async function sendMessageHandler(
       .maybeSingle();
     if (updated) message = updated as unknown as Message;
   } else {
+    const idioma = ctx.idioma ?? "pt-BR";
+    // Depois de `isConfigured`: canal sem credencial continua `queued`. A recusa
+    // fica FORA do try — o catch transforma exceção em `failed`/`meta_error` e
+    // engoliria o 403.
+    if (
+      input.type !== "template" &&
+      textoLivreForaDaJanela(c.channel_sessions?.provider, c.last_inbound_at)
+    ) {
+      const aviso = traduzir(
+        "A janela de 24 horas está fechada. Envie um modelo aprovado para continuar a conversa.",
+        idioma,
+      );
+      await supabase
+        .from("messages")
+        .update({ status: "failed", error_code: "fuera_de_ventana", error_message: aviso })
+        .eq("id", message.id)
+        .eq("organization_id", c.organization_id);
+      throw new ApiError(403, "fuera_de_ventana", undefined, ctx.requestId, aviso);
+    }
+    if (input.type === "template") {
+      try {
+        await barrarTemplateDeMarketingSemConsentimento(supabase, {
+          organizationId: ctx.organization_id,
+          contactId: c.contact_id,
+          channelSessionId: c.channel_session_id,
+          name: input.template_name ?? "",
+          language: input.template_language ?? "",
+          requestId: ctx.requestId,
+          idioma,
+        });
+      } catch (err) {
+        if (err instanceof ApiError && err.code === "marketing_consent_required") {
+          await supabase
+            .from("messages")
+            .update({ status: "failed", error_code: err.code, error_message: err.message })
+            .eq("id", message.id)
+            .eq("organization_id", c.organization_id);
+        }
+        throw err;
+      }
+    }
     try {
       // O que separa mídia de texto é a presença de `media` no envelope — o
       const checkBoundary = async () => {
@@ -722,6 +767,7 @@ export async function sendMessageHandler(
               to: chatId,
               name: input.template_name ?? "",
               language: input.template_language ?? "",
+              phoneNumberId: resolveSessionRef(c.channel_sessions),
               values: input.template_values ?? {},
             });
       } else if (input.media_storage_path) {

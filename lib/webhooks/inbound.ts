@@ -5,6 +5,7 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 
 import { canonicalPhoneBR } from "@/lib/channels/phone-variants";
+import type { PaisTelefone } from "@/lib/phones/pais";
 
 export interface FieldMap {
   name?: string[];
@@ -41,6 +42,42 @@ export function normalizePhoneBR(raw: unknown): string | null {
   return e164 ? canonicalPhoneBR(e164) : null;
 }
 
+/**
+ * E.164 com o país que a organização declarou quando o número não traz DDI.
+ *
+ * Brasil continua sendo `normalizePhoneBR` — o mesmo resultado, não uma regra
+ * parecida. Equador: móvel nacional de 9 dígitos começando em 9, o 0 de
+ * tronco (`099…`) sai, e `593…` já com o país vira `+593…`.
+ */
+export function normalizePhone(raw: unknown, pais: PaisTelefone = "BR"): string | null {
+  if (pais === "EC") return normalizePhoneEC(raw);
+  return normalizePhoneBR(raw);
+}
+
+function canonicoEC(digitsWithCountry: string): string | null {
+  if (!digitsWithCountry.startsWith("593")) return null;
+  let national = digitsWithCountry.slice(3);
+  if (national.startsWith("0")) national = national.slice(1);
+  if (national.length < 8 || national.length > 9) return null;
+  return `+593${national}`;
+}
+
+function normalizePhoneEC(raw: unknown): string | null {
+  if (typeof raw !== "string" || !raw.trim()) return null;
+  const digits = raw.replace(/\D/g, "");
+  if (!digits) return null;
+  if (raw.trim().startsWith("+")) {
+    if (!/^\d{8,15}$/.test(digits)) return null;
+    if (digits.startsWith("593")) return canonicoEC(digits);
+    if (digits.startsWith("55")) return canonicalPhoneBR(`+${digits}`);
+    return `+${digits}`;
+  }
+  if (digits.startsWith("593") && digits.length >= 11 && digits.length <= 13) return canonicoEC(digits);
+  if (digits.length === 10 && digits.startsWith("0")) return `+593${digits.slice(1)}`;
+  if (digits.length === 9 && digits.startsWith("9")) return `+593${digits}`;
+  return null;
+}
+
 function firstMatch(payload: Record<string, unknown>, aliases: string[]): { key: string; value: string } | null {
   const lowered = new Map(Object.keys(payload).map((k) => [k.toLowerCase(), k]));
   for (const alias of aliases) {
@@ -56,6 +93,7 @@ function firstMatch(payload: Record<string, unknown>, aliases: string[]): { key:
 export function mapInboundPayload(
   payload: Record<string, unknown>,
   fieldMap: FieldMap = {},
+  pais: PaisTelefone = "BR",
 ): MappedLead {
   const map: Required<FieldMap> = {
     name: [...(fieldMap.name ?? []), ...DEFAULT_FIELD_MAP.name],
@@ -81,7 +119,7 @@ export function mapInboundPayload(
 
   return {
     name: nameHit?.value ?? null,
-    phone: normalizePhoneBR(phoneHit?.value),
+    phone: normalizePhone(phoneHit?.value, pais),
     email: emailHit?.value ?? null,
     custom_fields,
     source_metadata,

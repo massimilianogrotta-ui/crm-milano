@@ -15,10 +15,12 @@ import type { NextRequest, NextResponse } from "next/server";
 
 import { fail, ok } from "@/lib/api/wrappers";
 import { requireRole } from "@/lib/auth/require-role";
+import { resolveMetaCreds } from "@/lib/channels/meta/credentials";
 import { metaSessionForOrg } from "@/lib/channels/meta/session";
 import { normalizeRejectedReason } from "@/lib/channels/meta/webhook";
 import { deriveTemplateContract, describeAddress } from "@/lib/channels/meta/template-contract";
 import { syncTemplates } from "@/lib/channels/meta/template-sync";
+import { redactSecrets } from "@/lib/phones/mask";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
@@ -159,22 +161,25 @@ export async function POST(_req: NextRequest): Promise<NextResponse> {
     return fail("invalid_request", "no_meta_channel", 400, { requestId });
   }
 
-  const token = process.env.META_SYSTEM_USER_TOKEN ?? "";
-  if (!token) return fail("invalid_request", "missing_meta_token", 400, { requestId });
+  const creds = await resolveMetaCreds(createAdminClient(), {
+    organizationId: r.orgId,
+    phoneNumberId: sessao.phoneNumberId ?? "",
+  });
+  if (!creds) return fail("invalid_request", "missing_meta_token", 400, { requestId });
 
   try {
     const counts = await syncTemplates({
       organizationId: r.orgId,
       wabaId: sessao.wabaId,
-      token,
-      graphVersion: process.env.META_GRAPH_VERSION ?? "v22.0",
+      token: creds.token,
+      graphVersion: creds.graphVersion,
     });
     return ok(counts);
   } catch (err) {
     // A falha da Graph API vira mensagem legível na tela, não 500 mudo — o
-    // operador precisa saber se é token vencido, WABA errada ou rede.
-    return fail("internal_error", err instanceof Error ? err.message : "sync_failed", 502, {
-      requestId,
-    });
+    // operador precisa saber se é token vencido, WABA errada ou rede. O texto
+    // passa pelo redator: um erro que ecoe o bearer não volta na resposta.
+    const bruto = err instanceof Error ? err.message : "sync_failed";
+    return fail("internal_error", redactSecrets(bruto), 502, { requestId });
   }
 }
