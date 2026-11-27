@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+# SEGRETI-GATE-01 (standard DEF, 2026-10-15): gitleaks sui file in stage, prima di ogni commit.
+# Blocca e basta: mostra regola, file e riga, mai il valore (--redact).
+# Bypass consapevole e tracciato nella storia del terminale: git commit --no-verify
+# Installazione (una volta per clone; i worktree la ereditano): git config core.hooksPath .githooks
+set -u
+if ! command -v gitleaks >/dev/null 2>&1; then
+  echo "pre-commit: gitleaks non installato (brew install gitleaks). Commit BLOCCATO." >&2
+  exit 1
+fi
+if ! gitleaks git --pre-commit --staged --redact --no-banner; then
+  echo "pre-commit: possibile segreto nei file in stage. Commit BLOCCATO (regola, file e riga sopra; il valore è nascosto)." >&2
+  echo "Se è un falso allarme noto: aggiungi la sua impronta a .gitleaksignore e rifai il commit." >&2
+  exit 1
+fi
+exit 0
